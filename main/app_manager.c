@@ -219,6 +219,9 @@ esp_err_t app_manager_start(lv_display_t *disp)
     esp_err_t err = switch_locked(find_app("launcher"));
     if (err == ESP_OK) {
         s_timer = lv_timer_create(manager_timer_cb, 50, NULL);
+        if (s_timer == NULL) {
+            err = ESP_ERR_NO_MEM;
+        }
     }
 
     bsp_display_unlock();
@@ -271,7 +274,15 @@ size_t app_manager_count(void)
 
 size_t app_manager_child_count(void)
 {
-    return s_content != NULL ? lv_obj_get_child_count(s_content) : 0;
+    if (s_content == NULL) {
+        return 0;
+    }
+    if (!bsp_display_lock(-1)) {
+        return 0;
+    }
+    size_t count = lv_obj_get_child_count(s_content);
+    bsp_display_unlock();
+    return count;
 }
 
 uint32_t app_manager_heartbeat(void)
