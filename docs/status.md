@@ -1,8 +1,8 @@
 # Status
 
 **As of:** 2026-11-06  
-**Milestone:** M5 launcher shell merged to `main`; M6 audio service is next  
-**Firmware tag:** `bringup-m1` (stable bring-up)
+**Milestone:** M6 audio service complete and merged to `main`; M7 dashboard next  
+**Firmware tag:** `bringup-m1` (stable bring-up), `m6` (audio service)
 
 ## Verified unit
 
@@ -79,6 +79,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | dBFS calibration | Not calibrated | Displayed value is relative digital level, not dB SPL |
 | HA integration | Not started | M7 |
 | Launcher / app manager | M5 merged to `main` | Brightness slider visual check |
+| M6 audio service | **Done**, merged | — |
 
 ## M5 launcher shell
 
@@ -112,9 +113,30 @@ Acceptance on hardware:
 - [ ] Touch still responds after repeated switches (manual).
 - [ ] Brightness slider changes the panel immediately (manual).
 
+## M6 audio service (branch `m6-audio-service`)
+
+Implemented and validated except for the final duplex soak:
+
+- `audio_service` owns the duplex I2S bus, ES7210 capture, ES8311 playback,
+  capture readers and three playback lanes with a pure-C mixer.
+- `audio_analysis` runs at 20 ms: legacy RMS/dBFS/peak, 1 s Leq, 1024-point
+  FFT, 16 half-octave bands, seqlock feature snapshot.
+- Capture refactor is behavior-preserving; M5 UI is unchanged.
+- Analysis time: **1.44 ms steady / 1.75 ms max** over 45 s (gate < 5 ms).
+- Test tone: 1 kHz −20 dBFS for 2 s, then muted; zero write errors and
+  `under=0`.
+- Normal build: speaker opens with the same 16 kHz/2/16 format, starts muted,
+  `audio_tx` writes silence; capture/analysis unaffected.
+- Host tests: 3/3 (`test_fft`, `test_features`, `test_mixer`).
+- 10-minute duplex soak: **passed** — 615 s, heartbeat 99 → 12076,
+  `under=0`, PSRAM delta 0, internal heap stable at ~246 KB, 36.3 °C,
+  `dsp` max 1.90 ms (steady max 1.45 ms). Zero errors/stalls/resets.
+- Open item for M9: playback `close`/`flush` must not race an in-flight
+  `write`; app lifecycle will stop the writer first or add a per-lane lock.
+
+Detail: [`m6-audio-validation.md`](m6-audio-validation.md).
+
 ## Next
 
-1. Brightness slider visual check.
-2. **M6 — shared audio service + analysis**, including the playback API that M9
-   needs.
-3. Then M7 — dashboard cards + Home Assistant.
+1. Start **M7 — dashboard cards + Home Assistant**.
+2. Tag M6 if not already tagged.

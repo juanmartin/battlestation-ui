@@ -4,12 +4,17 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "audio_probe.h"
+#include "audio_analysis.h"
+#include "audio_service.h"
 #include "app_manager.h"
 #include "diag_probe.h"
 #include "bsp/display.h"
 #include "bsp/esp-bsp.h"
 #include "wifi_probe.h"
+
+#if CONFIG_APP_AUDIO_TEST_TONE
+#include "audio_service_selftest.h"
+#endif
 
 static const char *TAG = "battlestation";
 
@@ -61,10 +66,22 @@ void app_main(void)
     bsp_display_brightness_set(CONFIG_APP_BACKLIGHT_PERCENT);
 
     /* Audio first: the UI timer starts reading its snapshot immediately. */
-    esp_err_t err = audio_probe_start();
+    esp_err_t err = audio_service_start();
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "audio task start failed: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "audio service start failed: %s", esp_err_to_name(err));
     }
+
+    err = audio_analysis_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "audio analysis start failed: %s", esp_err_to_name(err));
+    }
+
+#if CONFIG_APP_AUDIO_TEST_TONE
+    err = audio_service_selftest_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "audio self-test start failed: %s", esp_err_to_name(err));
+    }
+#endif
 
     err = app_manager_start(disp);
     if (err != ESP_OK) {

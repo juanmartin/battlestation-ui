@@ -1,16 +1,17 @@
 #include "diag_probe.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "audio_probe.h"
 #include "driver/temperature_sensor.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "app_manager.h"
+#include "audio_service.h"
 
 static const char *TAG = "diag_probe";
 static lv_display_t *s_disp;
@@ -81,11 +82,21 @@ static void diag_task(void *arg)
         uint32_t heartbeat = app_manager_heartbeat();
         uint32_t fps = app_manager_fps();
         TaskHandle_t lvgl = xTaskGetHandle("lvgl");
-        TaskHandle_t audio = xTaskGetHandle("audio_probe");
+        TaskHandle_t audio_rx = xTaskGetHandle("audio_rx");
+        TaskHandle_t audio_tx = xTaskGetHandle("audio_tx");
+        TaskHandle_t audio_analysis = xTaskGetHandle("audio_analysis");
         eTaskState lvgl_state = lvgl ? eTaskGetState(lvgl) : eDeleted;
-        eTaskState audio_state = audio ? eTaskGetState(audio) : eDeleted;
+        eTaskState audio_rx_state = audio_rx ? eTaskGetState(audio_rx) : eDeleted;
+        eTaskState audio_tx_state = audio_tx ? eTaskGetState(audio_tx) : eDeleted;
+        eTaskState audio_analysis_state = audio_analysis ? eTaskGetState(audio_analysis) : eDeleted;
         UBaseType_t lvgl_stack = lvgl ? uxTaskGetStackHighWaterMark(lvgl) : 0;
-        UBaseType_t audio_stack = audio ? uxTaskGetStackHighWaterMark(audio) : 0;
+        UBaseType_t audio_rx_stack = audio_rx ? uxTaskGetStackHighWaterMark(audio_rx) : 0;
+        UBaseType_t audio_tx_stack = audio_tx ? uxTaskGetStackHighWaterMark(audio_tx) : 0;
+        UBaseType_t audio_analysis_stack = audio_analysis ? uxTaskGetStackHighWaterMark(audio_analysis) : 0;
+        audio_service_status_t audio_status = {0};
+        if (audio_service_get_status(&audio_status) != ESP_OK) {
+            memset(&audio_status, 0, sizeof(audio_status));
+        }
         float temp_c = 0.0f;
         if (tsens != NULL && temperature_sensor_get_celsius(tsens, &temp_c) != ESP_OK) {
             temp_c = -999.0f;
@@ -100,10 +111,17 @@ static void diag_task(void *arg)
         last_heartbeat = heartbeat;
 
         ESP_LOGI(TAG,
-                 "heartbeat=%u fps=%u lvgl=%s/%u audio=%s/%u int=%u psram=%u temp=%.1f stall=%u",
+                 "heartbeat=%u fps=%u lvgl=%s/%u audio_rx=%s/%u audio_tx=%s/%u audio_analysis=%s/%u "
+                 "tx=%u under=%u pbr=%d muted=%d int=%u psram=%u temp=%.1f stall=%u",
                  (unsigned)heartbeat, (unsigned)fps,
                  task_state_name(lvgl_state), (unsigned)(lvgl_stack * sizeof(StackType_t)),
-                 task_state_name(audio_state), (unsigned)(audio_stack * sizeof(StackType_t)),
+                 task_state_name(audio_rx_state), (unsigned)(audio_rx_stack * sizeof(StackType_t)),
+                 task_state_name(audio_tx_state), (unsigned)(audio_tx_stack * sizeof(StackType_t)),
+                 task_state_name(audio_analysis_state), (unsigned)(audio_analysis_stack * sizeof(StackType_t)),
+                 (unsigned)audio_status.tx_frames,
+                 (unsigned)audio_status.tx_underruns,
+                 (int)audio_status.playback_ready,
+                 (int)audio_status.output_muted,
                  (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
                  (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                  temp_c, (unsigned)stall_cycles);
