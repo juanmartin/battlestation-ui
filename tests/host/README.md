@@ -24,6 +24,16 @@ To run a single binary directly:
 
 `build-host/` is ignored by the repository's `build*/` rule.
 
+## Sanitizers
+
+```bash
+cmake -S tests/host -B build-host-asan \
+  -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
+  -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+cmake --build build-host-asan
+ctest --test-dir build-host-asan --output-on-failure
+```
+
 ## Coverage
 
 - `test_fft` — 1024-point Hann FFT peak bins and levels for 1 kHz and 4 kHz

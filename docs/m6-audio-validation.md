@@ -82,6 +82,8 @@ ctest --test-dir build-host --output-on-failure
 - `test_features` — 89 checks.
 - `test_mixer` — 1290 checks.
 
+ASan/UBSan build: 3/3 tests pass with no reports.
+
 ## Builds
 
 | Build | Size | Free |
