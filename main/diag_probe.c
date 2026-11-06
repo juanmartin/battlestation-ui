@@ -4,7 +4,6 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "audio_probe.h"
 #include "driver/temperature_sensor.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -81,11 +80,14 @@ static void diag_task(void *arg)
         uint32_t heartbeat = app_manager_heartbeat();
         uint32_t fps = app_manager_fps();
         TaskHandle_t lvgl = xTaskGetHandle("lvgl");
-        TaskHandle_t audio = xTaskGetHandle("audio_probe");
+        TaskHandle_t audio_rx = xTaskGetHandle("audio_rx");
+        TaskHandle_t audio_analysis = xTaskGetHandle("audio_analysis");
         eTaskState lvgl_state = lvgl ? eTaskGetState(lvgl) : eDeleted;
-        eTaskState audio_state = audio ? eTaskGetState(audio) : eDeleted;
+        eTaskState audio_rx_state = audio_rx ? eTaskGetState(audio_rx) : eDeleted;
+        eTaskState audio_analysis_state = audio_analysis ? eTaskGetState(audio_analysis) : eDeleted;
         UBaseType_t lvgl_stack = lvgl ? uxTaskGetStackHighWaterMark(lvgl) : 0;
-        UBaseType_t audio_stack = audio ? uxTaskGetStackHighWaterMark(audio) : 0;
+        UBaseType_t audio_rx_stack = audio_rx ? uxTaskGetStackHighWaterMark(audio_rx) : 0;
+        UBaseType_t audio_analysis_stack = audio_analysis ? uxTaskGetStackHighWaterMark(audio_analysis) : 0;
         float temp_c = 0.0f;
         if (tsens != NULL && temperature_sensor_get_celsius(tsens, &temp_c) != ESP_OK) {
             temp_c = -999.0f;
@@ -100,10 +102,11 @@ static void diag_task(void *arg)
         last_heartbeat = heartbeat;
 
         ESP_LOGI(TAG,
-                 "heartbeat=%u fps=%u lvgl=%s/%u audio=%s/%u int=%u psram=%u temp=%.1f stall=%u",
+                 "heartbeat=%u fps=%u lvgl=%s/%u audio_rx=%s/%u audio_analysis=%s/%u int=%u psram=%u temp=%.1f stall=%u",
                  (unsigned)heartbeat, (unsigned)fps,
                  task_state_name(lvgl_state), (unsigned)(lvgl_stack * sizeof(StackType_t)),
-                 task_state_name(audio_state), (unsigned)(audio_stack * sizeof(StackType_t)),
+                 task_state_name(audio_rx_state), (unsigned)(audio_rx_stack * sizeof(StackType_t)),
+                 task_state_name(audio_analysis_state), (unsigned)(audio_analysis_stack * sizeof(StackType_t)),
                  (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
                  (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                  temp_c, (unsigned)stall_cycles);

@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "audio_probe.h"
+#include "audio_analysis.h"
 #include "bsp/display.h"
 #include "bsp/esp-bsp.h"
 #include "esp_heap_caps.h"
@@ -125,8 +125,8 @@ static void ui_timer_cb(lv_timer_t *timer)
 {
     (void)timer;
 
-    audio_probe_snapshot_t a;
-    audio_probe_get(&a);
+    audio_levels_t a;
+    audio_analysis_get_levels(&a);
     if (a.running) {
         lv_label_set_text(s_audio_status, "ES7210 running  |  16 kHz  |  stereo 16-bit");
         lv_label_set_text_fmt(s_label_l, "%.1f dBFS", a.dbfs_l);

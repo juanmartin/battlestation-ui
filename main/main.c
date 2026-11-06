@@ -4,7 +4,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "audio_probe.h"
+#include "audio_analysis.h"
+#include "audio_service.h"
 #include "app_manager.h"
 #include "diag_probe.h"
 #include "bsp/display.h"
@@ -61,9 +62,14 @@ void app_main(void)
     bsp_display_brightness_set(CONFIG_APP_BACKLIGHT_PERCENT);
 
     /* Audio first: the UI timer starts reading its snapshot immediately. */
-    esp_err_t err = audio_probe_start();
+    esp_err_t err = audio_service_start();
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "audio task start failed: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "audio service start failed: %s", esp_err_to_name(err));
+    }
+
+    err = audio_analysis_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "audio analysis start failed: %s", esp_err_to_name(err));
     }
 
     err = app_manager_start(disp);
