@@ -127,7 +127,7 @@ nvs_flash_init
 | **USB-A “USB OTG”** | USB 2.0 HS **host** | **No** | Keyboard/mouse/storage |
 | **C6 UART header** | C6 U0TXD/U0RXD, IO9, CHIP_PU | C6 only | Deliberate C6 recovery only |
 
-On this Mac the CH343P appears as `/dev/cu.usbmodem5B901660791` with Apple's
+On this Mac the CH343P appears as `/dev/cu.usbmodemXXXX` with Apple's
 built-in CDC driver. Flashing at 460800 baud works; the WCH driver is not
 required. Always use `/dev/cu.*`, not `/dev/tty.*`.
 

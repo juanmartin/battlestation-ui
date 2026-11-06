@@ -17,6 +17,9 @@ Living documents derive from it and should be updated instead:
 The snapshot is not authoritative for current status. Where it conflicts with a
 living document, the living document and the ADRs win.
 
+Unit identifiers (MAC address, LAN IP, USB serial port) are redacted in this
+public copy; the technical content is unchanged.
+
 Known differences after the bring-up:
 
 - The snapshot's status line predates runtime validation; the board is now
