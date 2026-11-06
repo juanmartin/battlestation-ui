@@ -21,8 +21,8 @@ The architecture and ADR-0008 ask for “1024-point FFT, 16 bands” and also sa
   Edges are geometric midpoints; the first band starts near 31.25 Hz and the
   last is capped at Nyquist. Low E lands in the 88.4 Hz band.
 - Use a **1024-point Hann FFT**, mono downmix for the spectrum, **20 ms hop**
-  (320 samples, 68.75% overlap) by default. Keep a 32 ms / 50% overlap option in
-  Kconfig for strict ADR-0008 behavior.
+  (320 samples, 68.75% overlap) for M6. A 32 ms / 50% overlap option can be
+  added later if CPU headroom or spectrum cadence requires it.
 - Keep **per-channel levels** (RMS, dBFS, peak, Leq) independent. The spectrum is
   mono-downmixed to stay within the 5 ms/frame analysis budget; per-channel FFT
   can be added later without changing the service API.
@@ -37,7 +37,9 @@ The architecture and ADR-0008 ask for “1024-point FFT, 16 bands” and also sa
   not a strict 1/3-octave analyzer. Update the wording in ADR-0008 and the
   architecture to say “16 half-octave bands”.
 - A 20 ms hop gives a 50 Hz spectrum update and fits the 20 ms analysis task.
-  The 32 ms option costs less CPU but updates at ~31 Hz.
+  The spectrum dB conversion is spread over four frames, so the full graph
+  refreshes every 80 ms without a per-frame libm burst. A 32 ms option would
+  cost less CPU but update at ~31 Hz.
 - The tuner avoids the FFT resolution problem entirely; the spectrum graph is
   for visualization, not pitch measurement.
 - If strict 1/3-octave analysis is ever required, add a second band table or a
