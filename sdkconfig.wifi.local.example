@@ -1,0 +1,6 @@
+# Copy this file to sdkconfig.wifi.local and fill in your 2.4 GHz network.
+# sdkconfig.wifi.local is gitignored and must never be committed.
+#
+# The ESP32-C6 is 2.4 GHz only; 5 GHz SSIDs will not work.
+CONFIG_APP_WIFI_SSID="your-2.4ghz-ssid"
+CONFIG_APP_WIFI_PASSWORD="your-password"

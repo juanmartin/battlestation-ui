@@ -1,0 +1,25 @@
+dependencies:
+  idf: ">=5.5.5,<6.0"
+
+  # Board support package for the Waveshare ESP32-P4-WIFI6-Touch-LCD-7B.
+  # It owns display, GT911 touch, ES8311/ES7210 audio wiring and the LVGL adapter.
+  waveshare/esp32_p4_wifi6_touch_lcd_7b: "==3.0.1"
+
+  # The BSP 3.0.1 adapter line requires LVGL 9.5 APIs.
+  lvgl/lvgl:
+    version: "==9.5.0"
+    public: true
+
+  # Override the BSP's ~0.6 adapter with 0.7.5. 0.6.4 has a known DSI
+  # framebuffer-ownership race that can block the LVGL task forever; 0.7.3+
+  # fixes it (esp-iot-solution issues #793/#804). Keep the local override so
+  # the fix is reproducible even if the BSP manifest still says ~0.6.
+  espressif/esp_lvgl_adapter:
+    version: "==0.7.5"
+    override_path: "../components/esp_lvgl_adapter"
+
+  # Keep these two pinned together. The factory ESP32-C6 firmware must speak the
+  # same ESP-Hosted protocol as the host side. Do not mix 1.4.x host code with a
+  # 2.x/3.x C6 image (or vice versa) without updating both sides deliberately.
+  espressif/esp_hosted: "1.4.*"
+  espressif/esp_wifi_remote: "==1.2.5"

@@ -1,0 +1,72 @@
+menu "Battlestation bring-up"
+
+    config APP_WIFI_SSID
+        string "Wi-Fi SSID (2.4 GHz only)"
+        default ""
+        help
+            SSID of the 2.4 GHz access point. Leave empty to skip Wi-Fi and
+            exercise only display, touch and audio. The ESP32-C6 does not
+            support 5 GHz.
+
+    config APP_WIFI_PASSWORD
+        string "Wi-Fi password"
+        default ""
+        help
+            WPA2/WPA3 password for the access point above.
+
+    config APP_BACKLIGHT_PERCENT
+        int "Backlight brightness (%)"
+        range 10 100
+        default 60
+        help
+            Initial backlight duty. 60% is a good stability-test default because
+            it reduces 5 V/backlight current while keeping the panel readable.
+            Raise to 100% only after the power path is known good.
+
+    config APP_MIC_GAIN_DB
+        int "ES7210 microphone PGA gain (dB)"
+        range 0 37
+        default 24
+        help
+            Applied equally to the two microphone channels. The ES7210 has
+            discrete gain steps; the driver rounds to the nearest supported
+            value. This affects dBFS readings, so keep it fixed while comparing
+            measurements.
+
+    choice APP_TEAR_MODE
+        prompt "Display tear-avoid mode"
+        default APP_TEAR_DOUBLE_DIRECT
+        help
+            DOUBLE_DIRECT + 180 + adapter 0.7.5 passed a 386 s soak with touch,
+            audio and LVGL active. TRIPLE_PARTIAL deadlocks at ~26 s on this
+            unit (adapter 0.6.4 and 0.7.5). TRIPLE_FULL is a slower fallback
+            (75 s soak passed).
+
+        config APP_TEAR_TRIPLE_PARTIAL
+            bool "Triple partial (fastest; rotated path is broken on this unit)"
+
+        config APP_TEAR_TRIPLE_FULL
+            bool "Triple full (fallback, full-frame rotation)"
+
+        config APP_TEAR_DOUBLE_DIRECT
+            bool "Double direct (factory-style, validated default)"
+    endchoice
+
+    choice APP_DISPLAY_ROTATION
+        prompt "Display rotation"
+        default APP_ROTATION_180
+        help
+            180 matches the factory UI and the BSP's own bsp_display_start()
+            default for this board. The 08 example uses 0 only as a diagnostic;
+            it is not the product orientation. Choose 0 only if you physically
+            mount the board the other way up. Touch flags are adjusted in
+            main.c: 180 uses no mirrors, 0 uses mirror x/y.
+
+        config APP_ROTATION_0
+            bool "0 degrees (diagnostic / alternate mounting)"
+
+        config APP_ROTATION_180
+            bool "180 degrees (factory orientation)"
+    endchoice
+
+endmenu

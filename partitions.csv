@@ -1,0 +1,9 @@
+# Name,   Type, SubType, Offset,   Size, Flags
+# 32 MB flash. No filesystem and no OTA slots: this firmware is a bring-up probe.
+# The partition table is at 0x9000 so the rev3.x bootloader (which can exceed
+# 0x6000) has room; NVS starts at 0xa000 and the app is aligned to 0x20000.
+# 8 MB app space is deliberately generous; the final single-firmware app is
+# expected to be < 4 MB.
+nvs,      data, nvs,     0xa000,   0x6000,
+phy_init, data, phy,     0x10000,  0x1000,
+factory,  app,  factory, 0x20000,  8M,
