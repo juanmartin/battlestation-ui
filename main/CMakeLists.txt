@@ -8,6 +8,7 @@ idf_component_register(
         "services/audio_analysis.c"
         "engine/audio_ring.c"
         "engine/audio_features.c"
+        "engine/audio_fft.c"
         "wifi_probe.c"
         "diag_probe.c"
         "apps/launcher.c"
