@@ -185,8 +185,8 @@ esp_err_t ui_probe_mount(lv_obj_t *parent)
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x0B0F14), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
 
-    make_label(scr, "BATTLESTATION", &lv_font_montserrat_28, 0xE2E8F0, 32, 24);
-    make_label(scr, "ESP32-P4  /  1024 x 600  /  LVGL 9.5  /  bring-up probe",
+    make_label(scr, "DASHBOARD", &lv_font_montserrat_28, 0xE2E8F0, 32, 24);
+    make_label(scr, "Live bring-up diagnostics  /  ESP32-P4  /  1024 x 600  /  LVGL 9.5",
                &lv_font_montserrat_14, 0x94A3B8, 34, 62);
 
     lv_obj_t *left = make_card(scr, 32, 108, 600, 372);
