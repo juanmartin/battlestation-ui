@@ -168,6 +168,30 @@ idf.py -B build -D SDKCONFIG="$PWD/sdkconfig.rev1_3" \
 
 Expected: `frame=30 fps=66.1 timeouts=0`.
 
+## M5 app-switch self-test
+
+The M5 launcher has an opt-in hardware self-test that cycles
+launcher → dashboard → organism → settings 25 times (100 switches) and logs
+LVGL child count and heap after each cycle.
+
+```bash
+printf 'CONFIG_APP_SWITCH_SELFTEST=y\n' > "$TMPDIR/selftest.defaults"
+idf.py -B build-selftest \
+  -D SDKCONFIG="$PWD/sdkconfig.selftest" \
+  -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.rev1_3.defaults;$TMPDIR/selftest.defaults" \
+  set-target esp32p4 build
+idf.py -B build-selftest -D SDKCONFIG="$PWD/sdkconfig.selftest" \
+  -p /dev/cu.usbmodemXXXX flash monitor
+```
+
+Expected tail:
+
+```text
+app_manager: selftest done: switches=100 children=6 baseline=6 child_delta=0 ...
+```
+
+Leave `CONFIG_APP_SWITCH_SELFTEST` disabled for normal images.
+
 ## Build notes
 
 - Do not run several first-time `idf.py` builds in parallel. They share the
