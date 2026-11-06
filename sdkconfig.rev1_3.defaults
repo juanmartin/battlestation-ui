@@ -1,0 +1,4 @@
+# Append this file AFTER sdkconfig.defaults only if `esptool.py chip_id`
+# reports ESP32-P4 revision v1.x. Rev1.x and rev3.x images are not boot-compatible.
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+CONFIG_ESP32P4_REV_MIN_100=y

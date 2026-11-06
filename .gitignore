@@ -3,7 +3,7 @@ build*/
 managed_components/
 sdkconfig
 sdkconfig.old
-sdkconfig.rev1_3*
+sdkconfig.rev1_3
 sdkconfig.*.build
 sdkconfig.rot0
 sdkconfig.full
@@ -15,3 +15,10 @@ compile_commands.json
 
 # local Wi-Fi credentials (never commit)
 sdkconfig.wifi.local
+
+# upstream source cache (tools/fetch_upstream.sh)
+/external/
+
+# local vendor documents (datasheets, schematics); keep the index only
+docs/reference/*
+!docs/reference/README.md
