@@ -77,4 +77,12 @@ menu "Battlestation bring-up"
             (100 switches), logging the LVGL child count and heap after each
             cycle. Use a dedicated test image; leave disabled for normal use.
 
+    config APP_AUDIO_TEST_TONE
+        bool "Play a 1 kHz test tone 2 s after boot"
+        default n
+        help
+            Opens the tone playback lane, unmutes the speaker, plays 2 s of
+            1 kHz at -20 dBFS, then 200 ms of silence and mutes/closes the
+            lane. Diagnostic test image only; normal M6 operation starts muted.
+
 endmenu

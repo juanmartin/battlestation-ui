@@ -19,6 +19,7 @@ To run a single binary directly:
 ```bash
 ./build-host/test_fft
 ./build-host/test_features
+./build-host/test_mixer
 ```
 
 `build-host/` is ignored by the repository's `build*/` rule.
@@ -31,6 +32,8 @@ To run a single binary directly:
 - `test_features` — -96 dBFS silence floor, full-scale RMS level, per-channel
   independence, 0.75/0.25 smoothing trajectory, 0.05 dB per 10 ms peak-hold
   decay, 1 s sliding Leq, and the 160-frame block / 1024-sample FFT counters.
+- `test_mixer` — silence, mono duplication, linear gain, int16 saturation,
+  and the -9/-15 dB ducking gain levels applied by the service table.
 
 ## Note on peak hold
 

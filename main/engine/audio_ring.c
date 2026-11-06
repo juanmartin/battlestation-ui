@@ -175,6 +175,32 @@ size_t audio_ring_available(audio_ring_t *ring)
     return available;
 }
 
+size_t audio_ring_free(audio_ring_t *ring)
+{
+    if (ring == NULL) {
+        return 0;
+    }
+    portENTER_CRITICAL(&ring->lock);
+    size_t free_frames = ring->capacity_frames - ring->occupied;
+    portEXIT_CRITICAL(&ring->lock);
+    return free_frames;
+}
+
+void audio_ring_reset(audio_ring_t *ring)
+{
+    if (ring == NULL) {
+        return;
+    }
+    portENTER_CRITICAL(&ring->lock);
+    ring->read_pos = 0;
+    ring->write_pos = 0;
+    ring->occupied = 0;
+    portEXIT_CRITICAL(&ring->lock);
+
+    while (xSemaphoreTake(ring->data_available, 0) == pdTRUE) {
+    }
+}
+
 uint32_t audio_ring_overruns(audio_ring_t *ring)
 {
     if (ring == NULL) {

@@ -12,6 +12,10 @@
 #include "bsp/esp-bsp.h"
 #include "wifi_probe.h"
 
+#if CONFIG_APP_AUDIO_TEST_TONE
+#include "audio_service_selftest.h"
+#endif
+
 static const char *TAG = "battlestation";
 
 void app_main(void)
@@ -71,6 +75,13 @@ void app_main(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "audio analysis start failed: %s", esp_err_to_name(err));
     }
+
+#if CONFIG_APP_AUDIO_TEST_TONE
+    err = audio_service_selftest_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "audio self-test start failed: %s", esp_err_to_name(err));
+    }
+#endif
 
     err = app_manager_start(disp);
     if (err != ESP_OK) {

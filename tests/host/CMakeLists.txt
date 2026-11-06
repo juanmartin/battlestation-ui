@@ -26,7 +26,15 @@ add_executable(test_features
 target_include_directories(test_features PRIVATE "${ENGINE_DIR}")
 target_link_libraries(test_features PRIVATE m)
 
+add_executable(test_mixer
+    test_mixer.c
+    "${ENGINE_DIR}/audio_mixer.c"
+)
+target_include_directories(test_mixer PRIVATE "${ENGINE_DIR}")
+target_link_libraries(test_mixer PRIVATE m)
+
 enable_testing()
 
 add_test(NAME fft_spectrum COMMAND test_fft)
 add_test(NAME features_levels COMMAND test_features)
+add_test(NAME mixer COMMAND test_mixer)

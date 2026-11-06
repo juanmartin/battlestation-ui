@@ -27,7 +27,11 @@ size_t audio_ring_write(audio_ring_t *ring, const int16_t *frames, size_t frame_
 size_t audio_ring_read(audio_ring_t *ring, int16_t *dst, size_t max_frames);
 
 size_t audio_ring_available(audio_ring_t *ring);
+size_t audio_ring_free(audio_ring_t *ring);
 uint32_t audio_ring_overruns(audio_ring_t *ring);
+
+/* Discard all buffered frames and reset the ring to empty. */
+void audio_ring_reset(audio_ring_t *ring);
 
 /*
  * Block until the producer has committed data or the timeout expires.
