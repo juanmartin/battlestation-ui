@@ -21,6 +21,7 @@ a decision changes; do not silently rewrite history.
 | [0011](0011-deferred-app-switching.md) | Defer app switches out of LVGL event callbacks | Accepted |
 | [0012](0012-dashboard-cards.md) | Dashboard card grid with fullscreen detail views | Accepted |
 | [0013](0013-audio-output-tuner.md) | Audio output ownership and tuner signal chain | Accepted |
+| [0014](0014-audio-analysis-defaults.md) | 16 half-octave bands, 20 ms FFT hop, YIN tuner | Accepted |
 
 ## Format
 
