@@ -95,7 +95,7 @@ All builds: zero compiler warnings.
 ## Open items
 
 - Playback lane `close`/`flush` must not race an in-flight `write` on the same
-  source; M9 app lifecycle will enforce “stop writer before close” or add a
-  per-lane writer lock.
+  source; the contract is documented in `audio_service.h`. M9 app lifecycle will
+  enforce “stop writer before close” or add a per-lane writer lock.
 - The test tone is a codec/duplex smoke test, not an acoustic calibration.
 - `dBFS` remains a digital level, not dB SPL.

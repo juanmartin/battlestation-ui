@@ -42,6 +42,7 @@ esp_err_t audio_service_get_status(audio_service_status_t *out);
 
 esp_err_t audio_service_capture_open(const audio_capture_config_t *cfg,
                                      audio_capture_reader_t *out);
+/* One reader task per handle. Close only after that task has stopped. */
 esp_err_t audio_service_capture_read(audio_capture_reader_t reader,
                                      int16_t *dst,
                                      size_t max_frames,
@@ -49,6 +50,8 @@ esp_err_t audio_service_capture_read(audio_capture_reader_t reader,
                                      size_t *frames_read);
 esp_err_t audio_service_capture_close(audio_capture_reader_t reader);
 
+/* One writer per lane, one lane per priority. Do not call flush/close while a
+ * writer is in flight on the same handle; stop the writer first. */
 esp_err_t audio_service_playback_open(const audio_playback_config_t *cfg,
                                       audio_playback_source_t *out);
 esp_err_t audio_service_playback_write(audio_playback_source_t src,
