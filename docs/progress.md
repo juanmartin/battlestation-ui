@@ -109,9 +109,24 @@ the detailed document instead of duplicating it.
   so the tone lab does not force a second audio refactor.
 - Roadmap renumbered: M9 tuner/tone lab, M10 settings, M11 stabilization.
 
+## 2026-11-06 — M6 audio service (branch `m6-audio-service`)
+
+- Split capture out of `audio_probe` into `audio_service` in two steps: a
+  behavior-preserving refactor, then a 200 ms SPSC ring with an `audio_rx` task.
+- Added `audio_analysis`: 20 ms task, legacy levels, 1 s Leq, 1024-point FFT,
+  16 half-octave bands, seqlock feature snapshot.
+- Added pure-C `audio_ring`, `audio_features`, `audio_fft`, `audio_mixer` and
+  `audio_seqlock`; host tests cover FFT, bands, levels, Leq and mixer.
+- Added duplex playback ownership: ES8311 opens with the same 16 kHz/2/16
+  format, starts muted, three playback lanes and a TX mixer.
+- Added an opt-in 1 kHz test tone; it plays and returns to mute with `under=0`.
+- Analysis timing: 1.44 ms steady / 1.75 ms max (gate < 5 ms); early 3.1 ms
+  steady and 19.6 ms cold spike were removed by linear FFT power, precomputed
+  band ranges and spread spectrum dB conversion.
+- 10-minute duplex soak started.
+
 ## Next
 
-- Brightness slider visual check.
-- M6 — shared audio service + analysis (capture first, playback API in the same
-  service).
+- Finish the M6 duplex soak.
+- Merge `m6-audio-service`, tag M6.
 - Then M7 — dashboard cards + Home Assistant.

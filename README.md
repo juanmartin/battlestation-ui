@@ -4,14 +4,17 @@ Firmware and engineering notes for the **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B**
 (ESP32-P4 rev1.3 + ESP32-C6, 7-inch 1024×600 MIPI-DSI, GT911 touch,
 ES7210 microphones, ES8311 speaker path).
 
-`main` now carries the M5 launcher shell: a static app table, a home grid, the
+`main` carries the M5 launcher shell: a static app table, a home grid, the
 bring-up dashboard, an organism placeholder and a brightness settings screen.
-Next are the shared audio service, the full dashboard (clock, weather, status,
-four Home Assistant lights), the organism and the tuner/tone lab.
+The `m6-audio-service` branch adds the shared audio service: capture and
+playback ownership, a 20 ms analysis task with FFT/bands/Leq, and a lane mixer.
+Next are the full dashboard (clock, weather, status, four Home Assistant
+lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M5 launcher shell merged to `main`; M6 audio service is next.
+**Milestone:** M6 audio service implemented on `m6-audio-service`; 10-minute
+duplex soak running.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -27,6 +30,10 @@ four Home Assistant lights), the organism and the tuner/tone lab.
 - Roadmap: dashboard cards (clock, weather, status, four HA lights with detail
   views) and a tuner/tone lab (guitar tuner, waveform generator, graphs,
   metronome).
+- M6 audio service: duplex capture/playback ownership, 20 ms analysis with FFT,
+  16 half-octave bands and Leq, three playback lanes and a pure-C mixer.
+  Analysis 1.44 ms steady / 1.75 ms max; host tests 3/3; 10-minute duplex soak
+  running.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 
