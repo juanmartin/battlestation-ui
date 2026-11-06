@@ -1,8 +1,8 @@
 # Status
 
 **As of:** 2026-11-06  
-**Milestone:** M4 complete on `main`; M5 launcher shell implemented on
-`m5-launcher`, pending hardware acceptance  
+**Milestone:** M4 complete on `main`; M5 launcher shell implemented and
+soak-validated on `m5-launcher` (manual touch/brightness check pending)  
 **Firmware tag:** `bringup-m1` (stable bring-up)
 
 ## Verified unit
@@ -73,18 +73,18 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | Item | State | Action |
 | --- | --- | --- |
 | `ledc: GPIO 32 is not usable` warning | Known BSP double-init | Validate brightness linearity; guard second `bsp_display_brightness_init()` if needed |
-| 10-minute idle soak | Pending | Next validation gate before M5 |
+| 10-minute launcher soak | **Passed** 2026-11-06 | 611 s, zero stalls, no reset |
 | PPA acceleration | Disabled | Revisit only with the PPA patch and a benchmark |
 | BLE through C6 | Not validated | Separate milestone; not required for M5–M8 |
 | Wi-Fi latency | 30.9 ms avg, 1.6% loss | Acceptable for HA; tune later |
 | dBFS calibration | Not calibrated | Displayed value is relative digital level, not dB SPL |
 | HA integration | Not started | M7 |
-| Launcher / app manager | Not started | M5 |
+| Launcher / app manager | M5 on `m5-launcher` | Manual touch/brightness check, then merge |
 
 ## M5 launcher shell (branch `m5-launcher`)
 
-Implemented in firmware and build-verified for rev1.3; hardware acceptance is
-still pending.
+Implemented and validated on hardware; only the manual touch/brightness check
+remains before merge.
 
 - `app_manager` with a static table of four apps: **launcher**, **dashboard**,
   **organism** (placeholder), **settings**.
@@ -100,18 +100,20 @@ still pending.
 - Self-test: **100 switches passed** on hardware — LVGL child count 6 → 6
   (delta 0), PSRAM delta 0, internal heap delta 484 B, no errors. Boot to
   launcher ~1.5 s.
+- 10-minute idle soak: **611 s**, heartbeat 99 → 12047 (zero stalls), no reset,
+  PSRAM delta 0, internal heap settled at ~294 KB, temperature 38.3 °C.
 
-Acceptance still to run on hardware:
+Acceptance on hardware:
 
 - [x] Boot reaches the launcher in < 3 s (measured ~1.5 s).
 - [x] 100 app switches without crash or LVGL object growth (self-test).
-- [ ] Dashboard, audio, Wi-Fi and touch still behave after repeated switches
-      (audio/Wi-Fi verified; touch still manual).
+- [x] 10-minute idle soak from the launcher.
+- [x] Audio and Wi-Fi continue running across app switches.
+- [ ] Touch still responds after repeated switches (manual).
 - [ ] Brightness slider changes the panel immediately (manual).
-- [ ] 10-minute idle soak from the launcher (running).
 
 ## Next
 
-1. Flash `m5-launcher` and run the M5 acceptance checks.
-2. Close the 10-minute idle soak.
+1. Manually check touch and the brightness slider on `m5-launcher`.
+2. Merge PR #1.
 3. Start **M6 — shared audio service + analysis**.

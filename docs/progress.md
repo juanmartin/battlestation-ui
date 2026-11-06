@@ -89,11 +89,13 @@ the detailed document instead of duplicating it.
   ([ADR-0011](decisions/0011-deferred-app-switching.md)).
 - Manager owns heartbeat/FPS so diagnostics remain valid when the dashboard is
   unmounted.
-- Build verified for rev1.3: ~1.09 MB, 87% free.
+- Build verified for rev1.3: ~1.09 MB, 87% free (1.23 MB with Wi-Fi).
 - On-hardware self-test: **100 switches**, child count 6 → 6, PSRAM delta 0,
   internal heap delta 484 B, no errors. Boot to launcher ~1.5 s.
-- 10-minute idle soak started; touch and brightness slider still need a manual
-  check.
+- 10-minute launcher soak: **611 s**, heartbeat 99 → 12047, zero stalls, no
+  reset, PSRAM delta 0, internal heap stable at ~294 KB, 38.3 °C.
+- Pending: manual touch-through-switches and brightness slider check; then merge
+  PR #1.
 
 ## Next
 

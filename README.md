@@ -11,8 +11,8 @@ placeholder. The dashboard, organism and Home Assistant integrations follow.
 
 ## Status
 
-**Milestone:** M4 complete on `main`; M5 launcher shell implemented on
-`m5-launcher`, pending hardware acceptance.
+**Milestone:** M4 complete on `main`; M5 launcher shell implemented and
+soak-validated on `m5-launcher` (manual touch/brightness check pending).
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -23,8 +23,8 @@ placeholder. The dashboard, organism and Home Assistant integrations follow.
 - 386 s display/audio/touch soak and 341 s Wi-Fi + ping + touch + audio soak
   passed with zero UI stalls.
 - M5 launcher shell on `m5-launcher`: four static apps, home grid, persistent
-  HOME button and a live brightness slider; build verified, hardware acceptance
-  pending.
+  HOME button and a live brightness slider. 100-switch self-test and 611 s soak
+  passed; manual touch/brightness check pending.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 
