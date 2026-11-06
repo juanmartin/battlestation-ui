@@ -6,7 +6,7 @@
 #include "audio_format.h"
 
 #define DBFS_FLOOR (-96.0f)
-#define AUDIO_SPECTRUM_LOG_DECIMATION 4u
+#define AUDIO_SPECTRUM_LOG_CHUNKS 4u
 
 const float audio_features_band_centers_hz[AUDIO_BAND_COUNT] = {
     44.2f, 62.5f, 88.4f, 125.0f, 176.8f, 250.0f, 353.6f, 500.0f,
@@ -256,10 +256,14 @@ void audio_features_process(audio_features_ctx_t *ctx,
         audio_fft_power(&ctx->fft, ctx->fft_input, ctx->spectrum_power);
         ctx->fft_count++;
 
-        if (((ctx->fft_count - 1u) % AUDIO_SPECTRUM_LOG_DECIMATION) == 0u) {
-            for (size_t k = 0; k < AUDIO_FFT_BINS; k++) {
-                ctx->spectrum_db[k] = power_to_db(ctx->spectrum_power[k]);
-            }
+        /* Convert one quarter of the bins per frame: a full spectrum refresh
+         * every 4 frames (80 ms) without a 512-log burst in one frame. */
+        const size_t chunk_bins = AUDIO_FFT_BINS / AUDIO_SPECTRUM_LOG_CHUNKS;
+        size_t chunk = (ctx->fft_count - 1u) % AUDIO_SPECTRUM_LOG_CHUNKS;
+        size_t first = chunk * chunk_bins;
+        size_t last = first + chunk_bins;
+        for (size_t k = first; k < last; k++) {
+            ctx->spectrum_db[k] = power_to_db(ctx->spectrum_power[k]);
         }
     }
     out_features->fft_count = ctx->fft_count;
