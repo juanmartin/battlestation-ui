@@ -11,7 +11,7 @@ validation gates.
 | M3 — Hosted Wi-Fi | **Done** 2026-11-06 | C6 handshake, IP, ping |
 | M4 — Integrated probe | **Done** 2026-11-06 | All paths concurrent, soaks |
 | M5 — Launcher shell | **Done**, merged | App switching, no leak |
-| M6 — Shared audio service + analysis | **In progress** | Analysis < 5 ms/frame |
+| M6 — Shared audio service + analysis | **Done** 2026-11-06 | Analysis < 5 ms/frame |
 | M7 — Dashboard + Home Assistant | Planned | 4 lights, clock, weather, detail views |
 | M8 — Generative organism | Planned | ≥ 30 fps, no UI stall |
 | M9 — Tuner + tone lab | Planned | Tuning accuracy, clean output |
@@ -83,9 +83,9 @@ touch raises it to ~60 fps. That is not a rendering ceiling.
   API smoke test (silence or test tone) does not disturb capture.
 - **Implemented on `m6-audio-service`:** capture refactor, 200 ms ring, 20 ms
   analysis, FFT/bands/Leq, duplex playback lanes + mixer, optional test tone.
-- **Result:** analysis 1.44 ms steady / 1.75 ms max; 180 s capture run and 45 s
-  duplex run with zero errors/stalls; test tone `under=0`; host tests 3/3.
-  10-minute duplex soak running.
+- **Result:** analysis 1.44 ms steady / 1.90 ms max; 180 s capture run and 615 s
+  duplex soak with zero errors/stalls; test tone `under=0`; host tests 3/3;
+  PSRAM delta 0 and internal heap stable at ~246 KB in the soak.
 - **Note:** keep capture and playback in the same service but in separate tasks
   or a clearly bounded mixer so DMA deadlines are never missed.
 

@@ -1,9 +1,8 @@
 # Status
 
 **As of:** 2026-11-06  
-**Milestone:** M6 audio service implemented on `m6-audio-service`; 10-minute
-duplex soak running  
-**Firmware tag:** `bringup-m1` (stable bring-up)
+**Milestone:** M6 audio service complete and merged to `main`; M7 dashboard next  
+**Firmware tag:** `bringup-m1` (stable bring-up), `m6` (audio service)
 
 ## Verified unit
 
@@ -80,7 +79,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | dBFS calibration | Not calibrated | Displayed value is relative digital level, not dB SPL |
 | HA integration | Not started | M7 |
 | Launcher / app manager | M5 merged to `main` | Brightness slider visual check |
-| M6 audio service | Branch `m6-audio-service` | 10-minute duplex soak, merge |
+| M6 audio service | **Done**, merged | — |
 
 ## M5 launcher shell
 
@@ -129,7 +128,9 @@ Implemented and validated except for the final duplex soak:
 - Normal build: speaker opens with the same 16 kHz/2/16 format, starts muted,
   `audio_tx` writes silence; capture/analysis unaffected.
 - Host tests: 3/3 (`test_fft`, `test_features`, `test_mixer`).
-- 10-minute duplex soak: **running**.
+- 10-minute duplex soak: **passed** — 615 s, heartbeat 99 → 12076,
+  `under=0`, PSRAM delta 0, internal heap stable at ~246 KB, 36.3 °C,
+  `dsp` max 1.90 ms (steady max 1.45 ms). Zero errors/stalls/resets.
 - Open item for M9: playback `close`/`flush` must not race an in-flight
   `write`; app lifecycle will stop the writer first or add a per-lane lock.
 
@@ -137,6 +138,5 @@ Detail: [`m6-audio-validation.md`](m6-audio-validation.md).
 
 ## Next
 
-1. Finish the M6 duplex soak.
-2. Merge `m6-audio-service` and tag M6.
-3. Start **M7 — dashboard cards + Home Assistant**.
+1. Start **M7 — dashboard cards + Home Assistant**.
+2. Tag M6 if not already tagged.

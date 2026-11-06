@@ -13,8 +13,7 @@ lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M6 audio service implemented on `m6-audio-service`; 10-minute
-duplex soak running.
+**Milestone:** M6 audio service complete and merged to `main`; M7 dashboard next.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -32,8 +31,8 @@ duplex soak running.
   metronome).
 - M6 audio service: duplex capture/playback ownership, 20 ms analysis with FFT,
   16 half-octave bands and Leq, three playback lanes and a pure-C mixer.
-  Analysis 1.44 ms steady / 1.75 ms max; host tests 3/3; 10-minute duplex soak
-  running.
+  Analysis 1.44 ms steady / 1.90 ms max; 615 s duplex soak with zero
+  errors/stalls and `under=0`; host tests 3/3.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 

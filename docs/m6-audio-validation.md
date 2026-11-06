@@ -66,7 +66,10 @@ Test-tone build (`CONFIG_APP_AUDIO_TEST_TONE=y`):
 Run: capture + analysis + `audio_tx` silence + Wi-Fi + launcher.
 
 - Bar: no stall, no reset, `under=0`, heap/PSRAM stable, `dsp` max < 5 ms.
-- Result: **TBD after the soak completes.**
+- Result: **passed** — 615 s, 122 samples, heartbeat 99 → 12076,
+  `under=0`, `pbr=1`, `muted=1`, PSRAM delta 0, internal heap stable at
+  ~246 KB after a one-time ~3 KB startup delta, 36.3 °C, `dsp` max 1.90 ms
+  (steady max 1.45 ms). Zero errors, stalls or resets.
 
 ## Host test suite
 

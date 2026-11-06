@@ -120,13 +120,13 @@ the detailed document instead of duplicating it.
 - Added duplex playback ownership: ES8311 opens with the same 16 kHz/2/16
   format, starts muted, three playback lanes and a TX mixer.
 - Added an opt-in 1 kHz test tone; it plays and returns to mute with `under=0`.
-- Analysis timing: 1.44 ms steady / 1.75 ms max (gate < 5 ms); early 3.1 ms
+- Analysis timing: 1.44 ms steady / 1.90 ms max (gate < 5 ms); early 3.1 ms
   steady and 19.6 ms cold spike were removed by linear FFT power, precomputed
   band ranges and spread spectrum dB conversion.
-- 10-minute duplex soak started.
+- 10-minute duplex soak: **615 s**, 122 samples, heartbeat 99 → 12076,
+  `under=0`, PSRAM delta 0, internal heap stable at ~246 KB, 36.3 °C, `dsp`
+  max 1.90 ms. Zero errors/stalls/resets.
 
 ## Next
 
-- Finish the M6 duplex soak.
-- Merge `m6-audio-service`, tag M6.
-- Then M7 — dashboard cards + Home Assistant.
+- Start M7 — dashboard cards + Home Assistant.
