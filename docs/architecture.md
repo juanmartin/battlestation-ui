@@ -132,7 +132,7 @@ audio_service RX task ──► ring buffer (SPSC, ~200 ms)
       │                 - per-channel RMS
       │                 - dBFS, peak, Leq window
       │                 - Hann-windowed 1024-point FFT
-      │                 - 1/3-octave band powers
+      │                 - 16 half-octave band powers
       │                        │
       │                        ▼
       │                 feature snapshot (seqlock/double buffer)

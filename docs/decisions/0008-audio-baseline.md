@@ -22,8 +22,12 @@ Use:
 | PGA gain | 24 dB initial |
 | I2S DMA | 6 descriptors × ~240 frames |
 | Ring buffer | 200 ms |
-| Analysis frame | 1024 samples, Hann, 50% overlap |
-| Metrics | RMS, dBFS, peak, Leq window, 16 bands |
+| Analysis frame | 1024 samples, Hann, 20 ms hop (68.75% overlap; 32 ms/50% option) |
+| Metrics | RMS, dBFS, peak, 1 s Leq, 16 half-octave bands |
+
+The 16-band table and FFT hop are defined in
+[ADR-0014](0014-audio-analysis-defaults.md); the tuner uses YIN rather than the
+FFT bins.
 
 The UI label must say **dBFS**, not dB SPL. If a calibrated SPL value is needed
 later, it requires a reference source and per-unit or per-model calibration.
