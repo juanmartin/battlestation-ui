@@ -24,6 +24,10 @@ Decision: [ADR-0001](decisions/0001-single-firmware-static-apps.md).
 
 ## Target layout
 
+> **Current M5 implementation:** `main/app_manager.c` plus
+> `main/apps/{launcher,dashboard,organism,settings}.c`. The dashboard still uses
+> the bring-up probe internals; the service split below starts at M6.
+
 ```text
 battlestation-ui/
 ├── main/

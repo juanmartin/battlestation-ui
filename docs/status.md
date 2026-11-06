@@ -1,8 +1,9 @@
 # Status
 
 **As of:** 2026-11-06  
-**Milestone:** M4 complete — integrated bring-up probe stable on hardware  
-**Firmware tag:** `bringup-m1`
+**Milestone:** M4 complete on `main`; M5 launcher shell implemented and
+soak-validated on `m5-launcher` (manual touch/brightness check pending)  
+**Firmware tag:** `bringup-m1` (stable bring-up)
 
 ## Verified unit
 
@@ -72,16 +73,47 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | Item | State | Action |
 | --- | --- | --- |
 | `ledc: GPIO 32 is not usable` warning | Known BSP double-init | Validate brightness linearity; guard second `bsp_display_brightness_init()` if needed |
-| 10-minute idle soak | Pending | Next validation gate before M5 |
+| 10-minute launcher soak | **Passed** 2026-11-06 | 611 s, zero stalls, no reset |
 | PPA acceleration | Disabled | Revisit only with the PPA patch and a benchmark |
 | BLE through C6 | Not validated | Separate milestone; not required for M5–M8 |
 | Wi-Fi latency | 30.9 ms avg, 1.6% loss | Acceptable for HA; tune later |
 | dBFS calibration | Not calibrated | Displayed value is relative digital level, not dB SPL |
 | HA integration | Not started | M7 |
-| Launcher / app manager | Not started | M5 |
+| Launcher / app manager | M5 on `m5-launcher` | Manual touch/brightness check, then merge |
+
+## M5 launcher shell (branch `m5-launcher`)
+
+Implemented and validated on hardware; only the manual touch/brightness check
+remains before merge.
+
+- `app_manager` with a static table of four apps: **launcher**, **dashboard**,
+  **organism** (placeholder), **settings**.
+- Launcher home grid with tappable tiles and a persistent `HOME` button on every
+  non-launcher screen.
+- Dashboard is the existing bring-up probe, mounted/unmounted as an app.
+- Settings has a live brightness slider; organism is an M8 placeholder.
+- App switching is deferred to the manager timer so an LVGL event target is
+  never deleted inside its own callback ([ADR-0011](decisions/0011-deferred-app-switching.md)).
+- Manager owns the heartbeat/FPS counters so diagnostics stay valid across
+  switches.
+- Build: ~1.09 MB, 87% of the 8 MB app slot free.
+- Self-test: **100 switches passed** on hardware — LVGL child count 6 → 6
+  (delta 0), PSRAM delta 0, internal heap delta 484 B, no errors. Boot to
+  launcher ~1.5 s.
+- 10-minute idle soak: **611 s**, heartbeat 99 → 12047 (zero stalls), no reset,
+  PSRAM delta 0, internal heap settled at ~294 KB, temperature 38.3 °C.
+
+Acceptance on hardware:
+
+- [x] Boot reaches the launcher in < 3 s (measured ~1.5 s).
+- [x] 100 app switches without crash or LVGL object growth (self-test).
+- [x] 10-minute idle soak from the launcher.
+- [x] Audio and Wi-Fi continue running across app switches.
+- [ ] Touch still responds after repeated switches (manual).
+- [ ] Brightness slider changes the panel immediately (manual).
 
 ## Next
 
-1. Close the 10-minute idle soak.
-2. Start **M5 — launcher shell** (`app_manager`, static app table, home grid).
-3. Keep decisions current in [`decisions/`](decisions/).
+1. Manually check touch and the brightness slider on `m5-launcher`.
+2. Merge PR #1.
+3. Start **M6 — shared audio service + analysis**.

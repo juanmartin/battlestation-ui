@@ -27,8 +27,7 @@ static lv_obj_t *s_touch_label;
 static lv_obj_t *s_fps_label;
 static lv_obj_t *s_touch_overlay;
 static lv_obj_t *s_touch_dot;
-static volatile uint32_t s_ui_heartbeat;
-static volatile uint32_t s_last_fps;
+static lv_timer_t *s_timer;
 
 static lv_obj_t *make_card(lv_obj_t *parent, int x, int y, int w, int h)
 {
@@ -125,7 +124,6 @@ static void touch_event_cb(lv_event_t *e)
 static void ui_timer_cb(lv_timer_t *timer)
 {
     (void)timer;
-    s_ui_heartbeat++;
 
     audio_probe_snapshot_t a;
     audio_probe_get(&a);
@@ -154,7 +152,6 @@ static void ui_timer_cb(lv_timer_t *timer)
 
     uint32_t fps = 0;
     if (esp_lv_adapter_get_fps(s_disp, &fps) == ESP_OK) {
-        s_last_fps = fps;
         lv_label_set_text_fmt(s_fps_label, "%u fps", (unsigned)fps);
     } else {
         lv_label_set_text(s_fps_label, "-- fps");
@@ -169,38 +166,27 @@ static void ui_timer_cb(lv_timer_t *timer)
     }
 }
 
-uint32_t ui_probe_heartbeat(void)
+esp_err_t ui_probe_mount(lv_obj_t *parent)
 {
-    return s_ui_heartbeat;
-}
-
-uint32_t ui_probe_fps(void)
-{
-    return s_last_fps;
-}
-
-esp_err_t ui_probe_start(lv_display_t *disp)
-{
-    if (disp == NULL) {
+    if (parent == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    s_disp = disp;
-
-    if (esp_lv_adapter_fps_stats_enable(disp, true) != ESP_OK) {
-        ESP_LOGW(TAG, "FPS statistics not available");
+    s_disp = lv_display_get_default();
+    if (s_disp == NULL) {
+        return ESP_ERR_INVALID_STATE;
     }
 
     if (!bsp_display_lock(-1)) {
         return ESP_ERR_TIMEOUT;
     }
 
-    lv_obj_t *scr = lv_scr_act();
+    lv_obj_t *scr = parent;
     lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x0B0F14), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
 
-    make_label(scr, "BATTLESTATION", &lv_font_montserrat_28, 0xE2E8F0, 32, 24);
-    make_label(scr, "ESP32-P4  /  1024 x 600  /  LVGL 9.5  /  bring-up probe",
+    make_label(scr, "DASHBOARD", &lv_font_montserrat_28, 0xE2E8F0, 32, 24);
+    make_label(scr, "Live bring-up diagnostics  /  ESP32-P4  /  1024 x 600  /  LVGL 9.5",
                &lv_font_montserrat_14, 0x94A3B8, 34, 62);
 
     lv_obj_t *left = make_card(scr, 32, 108, 600, 372);
@@ -286,9 +272,43 @@ esp_err_t ui_probe_start(lv_display_t *disp)
     lv_obj_set_style_bg_opa(s_touch_dot, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(s_touch_dot, 0, 0);
 
-    lv_timer_create(ui_timer_cb, 50, NULL);
+    s_timer = lv_timer_create(ui_timer_cb, 50, NULL);
+    if (s_timer == NULL) {
+        bsp_display_unlock();
+        return ESP_ERR_NO_MEM;
+    }
 
     bsp_display_unlock();
     ESP_LOGI(TAG, "UI ready");
     return ESP_OK;
+}
+
+void ui_probe_unmount(void)
+{
+    if (!bsp_display_lock(-1)) {
+        return;
+    }
+
+    if (s_timer != NULL) {
+        lv_timer_delete(s_timer);
+        s_timer = NULL;
+    }
+
+    s_disp = NULL;
+    s_audio_status = NULL;
+    s_bar_l = NULL;
+    s_bar_r = NULL;
+    s_label_l = NULL;
+    s_label_r = NULL;
+    s_label_avg = NULL;
+    s_label_peak = NULL;
+    s_wifi_state = NULL;
+    s_wifi_ip = NULL;
+    s_wifi_rssi = NULL;
+    s_touch_label = NULL;
+    s_fps_label = NULL;
+    s_touch_overlay = NULL;
+    s_touch_dot = NULL;
+
+    bsp_display_unlock();
 }

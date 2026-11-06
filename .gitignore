@@ -22,3 +22,6 @@ sdkconfig.wifi.local
 # local vendor documents (datasheets, schematics); keep the index only
 docs/reference/*
 !docs/reference/README.md
+
+# local self-test config
+sdkconfig.selftest

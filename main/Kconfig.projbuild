@@ -69,4 +69,12 @@ menu "Battlestation bring-up"
             bool "180 degrees (factory orientation)"
     endchoice
 
+    config APP_SWITCH_SELFTEST
+        bool "Run the M5 100-switch launcher self-test at boot"
+        default n
+        help
+            Cycles launcher -> dashboard -> organism -> settings 25 times
+            (100 switches), logging the LVGL child count and heap after each
+            cycle. Use a dedicated test image; leave disabled for normal use.
+
 endmenu
