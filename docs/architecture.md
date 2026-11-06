@@ -29,10 +29,11 @@ Decision: [ADR-0001](decisions/0001-single-firmware-static-apps.md).
 
 ## Target layout
 
-> **Current implementation:** `main/app_manager.c` plus
-> `main/apps/{launcher,dashboard,organism,settings}.c`. The dashboard still uses
-> the bring-up probe internals; the service split starts at M6 and the Tuner app
-> arrives at M9.
+> **Current implementation:** M5 launcher plus the M6 audio service:
+> `main/services/audio_service.*` (capture + playback lanes + mixer),
+> `main/services/audio_analysis.*`, and `main/engine/*` DSP/ring code. The
+> dashboard still uses the bring-up probe internals; the Tuner app arrives at
+> M9. Evidence: [`m6-audio-validation.md`](m6-audio-validation.md).
 
 ```text
 battlestation-ui/

@@ -192,6 +192,31 @@ app_manager: selftest done: switches=100 children=6 baseline=6 child_delta=0 ...
 
 Leave `CONFIG_APP_SWITCH_SELFTEST` disabled for normal images.
 
+## M6 audio self-test
+
+The duplex audio path has an opt-in test tone that plays 1 kHz at −20 dBFS for
+2 s through ES8311, then mutes.
+
+```bash
+printf 'CONFIG_APP_AUDIO_TEST_TONE=y\n' > "$TMPDIR/tone.defaults"
+idf.py -B build-tone \
+  -D SDKCONFIG="$PWD/sdkconfig.tone" \
+  -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.rev1_3.defaults;$TMPDIR/tone.defaults" \
+  set-target esp32p4 build
+idf.py -B build-tone -D SDKCONFIG="$PWD/sdkconfig.tone" \
+  -p /dev/cu.usbmodemXXXX flash monitor
+```
+
+Expected:
+
+```text
+audio_service: playback lane 'test_tone' open ...
+audio_selftest: start: 2 s, 1 kHz, -20 dBFS
+audio_selftest: done
+```
+
+Leave `CONFIG_APP_AUDIO_TEST_TONE` disabled for normal images.
+
 ## Build notes
 
 - Do not run several first-time `idf.py` builds in parallel. They share the
