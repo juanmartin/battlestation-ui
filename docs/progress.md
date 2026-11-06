@@ -78,7 +78,7 @@ the detailed document instead of duplicating it.
 - Decision: [ADR-0004](decisions/0004-external-dependencies.md),
   [ADR-0007](decisions/0007-portability-boundary.md).
 
-## 2026-11-06 — M5 launcher shell (branch `m5-launcher`)
+## 2026-11-06 — M5 launcher shell merged
 
 - Added `app_manager` with a static app table: launcher, dashboard, organism
   placeholder, settings.
@@ -94,10 +94,24 @@ the detailed document instead of duplicating it.
   internal heap delta 484 B, no errors. Boot to launcher ~1.5 s.
 - 10-minute launcher soak: **611 s**, heartbeat 99 → 12047, zero stalls, no
   reset, PSRAM delta 0, internal heap stable at ~294 KB, 38.3 °C.
-- Pending: manual touch-through-switches and brightness slider check; then merge
-  PR #1.
+- Touch navigation verified live through organism → settings → dashboard →
+  HOME. Brightness slider still needs a visual check.
+- PR #1 merged to `main`.
+
+## 2026-11-06 — Roadmap expanded: dashboard cards and tone lab
+
+- Dashboard: clock, weather, Wi-Fi/audio status, and four Home Assistant light
+  cards, each expandable to a fullscreen detail view
+  ([ADR-0012](decisions/0012-dashboard-cards.md)).
+- New tuner/tone-lab app: guitar/chromatic tuner, waveform generator, multiple
+  graphs and metronome ([ADR-0013](decisions/0013-audio-output-tuner.md)).
+- M6 scope expanded to own the duplex I2S bus and define the playback API now,
+  so the tone lab does not force a second audio refactor.
+- Roadmap renumbered: M9 tuner/tone lab, M10 settings, M11 stabilization.
 
 ## Next
 
-- Flash `m5-launcher`, run 100-switch and 10-minute soak tests.
-- Then M6 — shared audio service + analysis.
+- Brightness slider visual check.
+- M6 — shared audio service + analysis (capture first, playback API in the same
+  service).
+- Then M7 — dashboard cards + Home Assistant.

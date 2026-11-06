@@ -4,15 +4,14 @@ Firmware and engineering notes for the **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B**
 (ESP32-P4 rev1.3 + ESP32-C6, 7-inch 1024×600 MIPI-DSI, GT911 touch,
 ES7210 microphones, ES8311 speaker path).
 
-The `main` branch carries the stable bring-up probe: one firmware that proves
-display, touch, LVGL, stereo microphone capture and hosted Wi-Fi simultaneously.
-The `m5-launcher` branch adds the launcher shell, static app table and settings
-placeholder. The dashboard, organism and Home Assistant integrations follow.
+`main` now carries the M5 launcher shell: a static app table, a home grid, the
+bring-up dashboard, an organism placeholder and a brightness settings screen.
+Next are the shared audio service, the full dashboard (clock, weather, status,
+four Home Assistant lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M4 complete on `main`; M5 launcher shell implemented and
-soak-validated on `m5-launcher` (manual touch/brightness check pending).
+**Milestone:** M5 launcher shell merged to `main`; M6 audio service is next.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -22,9 +21,12 @@ soak-validated on `m5-launcher` (manual touch/brightness check pending).
   `esp_lvgl_adapter` 0.7.5 override.
 - 386 s display/audio/touch soak and 341 s Wi-Fi + ping + touch + audio soak
   passed with zero UI stalls.
-- M5 launcher shell on `m5-launcher`: four static apps, home grid, persistent
-  HOME button and a live brightness slider. 100-switch self-test and 611 s soak
-  passed; manual touch/brightness check pending.
+- M5 launcher shell merged: four static apps, home grid, persistent HOME button
+  and a live brightness slider. 100-switch self-test and 611 s soak passed;
+  touch navigation verified; brightness visual check pending.
+- Roadmap: dashboard cards (clock, weather, status, four HA lights with detail
+  views) and a tuner/tone lab (guitar tuner, waveform generator, graphs,
+  metronome).
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 
@@ -32,7 +34,7 @@ Full evidence and open items: [`docs/status.md`](docs/status.md).
 
 | Path | Purpose |
 | --- | --- |
-| `main/` | Bring-up firmware: display, touch, audio, Wi-Fi, diagnostics |
+| `main/` | Launcher, app manager and bring-up apps: display, touch, audio, Wi-Fi, diagnostics |
 | `components/esp_lvgl_adapter/` | Local 0.7.5 override — the only vendored dependency |
 | `docs/` | Handbook: status, hardware, bring-up, stability, architecture, roadmap, ADRs |
 | `probes/dsi/` | Standalone raw `esp_lcd` DSI stress test |
@@ -71,7 +73,7 @@ the full sequence, revision handling and troubleshooting.
 | [`docs/bringup.md`](docs/bringup.md) | macOS/ESP-IDF setup, build, flash, acceptance checks |
 | [`docs/stability.md`](docs/stability.md) | Display-freeze root cause, isolation matrix, chosen pipeline |
 | [`docs/architecture.md`](docs/architecture.md) | Target application architecture and portability boundary |
-| [`docs/roadmap.md`](docs/roadmap.md) | M0–M10 with status and acceptance criteria |
+| [`docs/roadmap.md`](docs/roadmap.md) | M0–M11 with status and acceptance criteria |
 | [`docs/decisions/`](docs/decisions/) | Architecture decision records (ADRs) |
 | [`docs/external/upstream.md`](docs/external/upstream.md) | Dependency provenance and update policy |
 | [`docs/research/`](docs/research/) | Frozen 2026-11-06 research handoff (source material) |

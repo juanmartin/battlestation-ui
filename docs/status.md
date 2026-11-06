@@ -1,8 +1,7 @@
 # Status
 
 **As of:** 2026-11-06  
-**Milestone:** M4 complete on `main`; M5 launcher shell implemented and
-soak-validated on `m5-launcher` (manual touch/brightness check pending)  
+**Milestone:** M5 launcher shell merged to `main`; M6 audio service is next  
 **Firmware tag:** `bringup-m1` (stable bring-up)
 
 ## Verified unit
@@ -79,24 +78,25 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | Wi-Fi latency | 30.9 ms avg, 1.6% loss | Acceptable for HA; tune later |
 | dBFS calibration | Not calibrated | Displayed value is relative digital level, not dB SPL |
 | HA integration | Not started | M7 |
-| Launcher / app manager | M5 on `m5-launcher` | Manual touch/brightness check, then merge |
+| Launcher / app manager | M5 merged to `main` | Brightness slider visual check |
 
-## M5 launcher shell (branch `m5-launcher`)
+## M5 launcher shell
 
-Implemented and validated on hardware; only the manual touch/brightness check
-remains before merge.
+Merged to `main`; only the brightness slider visual check remains.
 
 - `app_manager` with a static table of four apps: **launcher**, **dashboard**,
   **organism** (placeholder), **settings**.
 - Launcher home grid with tappable tiles and a persistent `HOME` button on every
   non-launcher screen.
-- Dashboard is the existing bring-up probe, mounted/unmounted as an app.
+- Dashboard is the bring-up probe, mounted/unmounted as an app. M7 expands it
+  into a card dashboard (clock, weather, status, four HA lights).
 - Settings has a live brightness slider; organism is an M8 placeholder.
 - App switching is deferred to the manager timer so an LVGL event target is
   never deleted inside its own callback ([ADR-0011](decisions/0011-deferred-app-switching.md)).
 - Manager owns the heartbeat/FPS counters so diagnostics stay valid across
   switches.
-- Build: ~1.09 MB, 87% of the 8 MB app slot free.
+- Build: ~1.09 MB without Wi-Fi, ~1.23 MB with Wi-Fi; 85–87% of the 8 MB app
+  slot free.
 - Self-test: **100 switches passed** on hardware — LVGL child count 6 → 6
   (delta 0), PSRAM delta 0, internal heap delta 484 B, no errors. Boot to
   launcher ~1.5 s.
@@ -114,6 +114,7 @@ Acceptance on hardware:
 
 ## Next
 
-1. Manually check touch and the brightness slider on `m5-launcher`.
-2. Merge PR #1.
-3. Start **M6 — shared audio service + analysis**.
+1. Brightness slider visual check.
+2. **M6 — shared audio service + analysis**, including the playback API that M9
+   needs.
+3. Then M7 — dashboard cards + Home Assistant.

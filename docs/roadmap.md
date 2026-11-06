@@ -10,12 +10,13 @@ validation gates.
 | M2 — Audio capture and playback | **Done** 2026-11-06 | Stereo capture, echo path, gain |
 | M3 — Hosted Wi-Fi | **Done** 2026-11-06 | C6 handshake, IP, ping |
 | M4 — Integrated probe | **Done** 2026-11-06 | All paths concurrent, soaks |
-| M5 — Launcher shell | **Done** (manual UI check pending) | App switching, no leak |
-| M6 — Shared audio service + analysis | Planned | Analysis < 5 ms/frame |
-| M7 — Dashboard + Home Assistant | Planned | HA control + state push |
+| M5 — Launcher shell | **Done**, merged | App switching, no leak |
+| M6 — Shared audio service + analysis | **Next** | Analysis < 5 ms/frame |
+| M7 — Dashboard + Home Assistant | Planned | 4 lights, clock, weather, detail views |
 | M8 — Generative organism | Planned | ≥ 30 fps, no UI stall |
-| M9 — Settings and provisioning | Planned | Persistence, bad input handling |
-| M10 — Stabilization | Planned | 24 h soak, graceful degradation |
+| M9 — Tuner + tone lab | Planned | Tuning accuracy, clean output |
+| M10 — Settings and provisioning | Planned | Persistence, bad input handling |
+| M11 — Stabilization | Planned | 24 h soak, graceful degradation |
 
 ## M0 — Environment and board identity
 
@@ -53,39 +54,57 @@ validation gates.
 - **Accept:** display + touch + mic bars + Wi-Fi live simultaneously; FPS stable;
   10-minute soak; no watchdog; heap/PSRAM stable.
 - **Result:** 386 s display/audio/touch soak, 341 s combined Wi-Fi/ping/touch/
-  audio soak, zero UI stalls. 10-minute idle soak still to close before M5.
+  audio soak, zero UI stalls. 10-minute launcher soak passed at M5.
 
 FPS note: idle ~20 fps is normal because labels update at 20 Hz; continuous
 touch raises it to ~60 fps. That is not a rendering ceiling.
 
 ## M5 — Launcher shell
 
-- Implement `app_manager`, three static app descriptors, home grid, settings
+- Implement `app_manager`, static app descriptors, home grid, settings
   placeholder.
 - **Accept:** 100 app switches with no crash/leak; LVGL object count returns to
   baseline; brightness works; boot to launcher < 3 s.
-- **Implemented on `m5-launcher`:** `app_manager`, four static apps (launcher,
-  dashboard, organism placeholder, settings), home grid, persistent HOME button,
-  live brightness slider. PR #1.
-- **Self-test result:** 100 switches, child count 6 → 6, PSRAM delta 0,
-  internal heap delta 484 B, no errors. Boot to launcher ~1.5 s.
-- **Soak result:** 611 s, heartbeat 99 → 12047, zero stalls, no reset, PSRAM
-  delta 0, internal heap stable at ~294 KB.
-- **Pending:** manual touch-through-switches and brightness slider check; then
-  merge to `main`.
+- **Result:** merged to `main`. 100 switches with child count 6 → 6, PSRAM delta
+  0, internal heap delta 484 B; 611 s launcher soak with zero stalls; boot
+  ~1.5 s. Brightness slider visual check remains manual.
 
 ## M6 — Shared audio service + analysis
 
-- Move capture into `audio_service`; add ring buffer, 20 ms cadence, RMS/dBFS,
-  peak/Leq, 1024-point FFT, 16 bands.
+- First a pure refactor: move ES7210 capture out of the probe into
+  `audio_service` with identical dBFS behavior.
+- Then add the ring buffer, 20 ms cadence, RMS/dBFS, peak/Leq, 1024-point FFT
+  and 16 bands.
+- **Own the duplex I2S bus now.** Define the playback API and output mixer even
+  though the first implementation only captures; M9's tone generator and
+  metronome must not open the codec themselves.
 - **Accept:** 16 kHz stereo; analysis < 5 ms/frame; UI unaffected; known tones
-  produce expected bins; dBFS tracks a signal generator monotonically.
+  produce expected bins; dBFS tracks a signal generator monotonically; playback
+  API smoke test (silence or test tone) does not disturb capture.
+- **Note:** keep capture and playback in the same service but in separate tasks
+  or a clearly bounded mixer so DMA deadlines are never missed.
 
 ## M7 — Dashboard + Home Assistant
 
-- Rolling 15 s level graph, light on/off/brightness, connection status.
-- **Accept:** HA light toggles < 500 ms on LAN; state changes < 1 s; graph
-  ≥ 30 fps; reconnect after Wi-Fi drop.
+The dashboard is a grid of cards; tapping a card opens a fullscreen detail view
+with more information or controls. Back returns to the grid
+([ADR-0012](decisions/0012-dashboard-cards.md)).
+
+- **Clock** — SNTP time, configurable timezone.
+- **Weather** — prefer an HA weather entity (no extra API key); external provider
+  later. Show temperature, condition and a short forecast; placeholder when
+  unavailable.
+- **System status** — Wi-Fi state/RSSI/IP, dB sound meter, heap/temperature.
+- **Home Assistant lights** — prepare four light cards with on/off and brightness
+  (color temperature if the entity supports it), state sync and a pending state
+  while a command is in flight.
+- **Detail views** — one card expands to a larger graph/control view; keep the
+  dashboard state alive underneath.
+- **Configuration** — HA URL/token and the four entity IDs can start in Kconfig;
+  runtime provisioning lands in M10.
+- **Accept:** clock and weather update; four lights reflect HA state and command
+  in < 500 ms; state push < 1 s; detail open/close < 100 ms; dashboard ≥ 30 fps;
+  reconnect after Wi-Fi or HA drop; 30-minute soak.
 
 ## M8 — Generative organism
 
@@ -94,15 +113,38 @@ touch raises it to ~60 fps. That is not a rendering ceiling.
 - **Accept:** ≥ 30 fps at target particle count; touch response < 50 ms; 30-min
   soak; no UI stall; engine builds/tests on macOS without LVGL.
 
-## M9 — Settings and provisioning
+## M9 — Tuner + tone lab
 
-- Brightness, mic gain, Wi-Fi scan/connect, HA URL/token; NVS persistence.
+One app with three related tools; all audio goes through `audio_service`
+([ADR-0013](decisions/0013-audio-output-tuner.md)).
+
+- **Guitar tuner** — standard E2 A2 D3 G3 B3 E4 plus chromatic mode; note name,
+  cents deviation, reference A4 (default 440 Hz). Use YIN/autocorrelation with
+  parabolic interpolation on the capture stream. Validate low-E accuracy; if
+  16 kHz capture is insufficient, add a dedicated higher-rate capture path
+  rather than changing the shared format silently.
+- **Tone generator** — sine, square, triangle and saw; frequency, amplitude and
+  optional sweep; click-free ramps; output through ES8311.
+- **Graphs** — time-domain waveform, spectrum/FFT and a cents needle, updated at
+  ≥ 30 fps.
+- **Metronome** — 30–240 BPM, 2/4, 3/4, 4/4 and 6/8, accent beat, visual beat and
+  click. Share the output mixer with the tone generator with a clear priority
+  rule.
+- **Accept:** tuner within ±1 cent at A4 and ±3 cents at low E with a clean
+  input; tone frequency within 0.1%; metronome jitter < 5 ms; no clicks or
+  dropouts while capture/analysis run; 30-minute soak.
+
+## M10 — Settings and provisioning
+
+- Brightness, mic gain, Wi-Fi scan/connect, HA URL/token, timezone, A4 reference,
+  four light entity IDs and weather entity; NVS persistence.
 - **Accept:** settings survive reboot; invalid SSID/token handled without crash;
-  no filesystem/logs created.
+  no filesystem/logs created; dashboard and tuner pick up changes without a
+  reboot where practical.
 
-## M10 — Stabilization
+## M11 — Stabilization
 
-- 24-hour soak with Wi-Fi/HA/audio/organism; watchdog; error injection (AP off,
-  HA off, unplug speaker).
+- 24-hour soak with dashboard/HA/organism/tuner/tone/metronome active; watchdog;
+  error injection (AP off, HA off, invalid token, unplug speaker).
 - **Accept:** no reboot/leak; heap/PSRAM high-water documented; graceful
   degradation; final memory/performance report.

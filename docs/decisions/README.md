@@ -19,6 +19,8 @@ a decision changes; do not silently rewrite history.
 | [0009](0009-no-filesystem-or-ota.md) | No filesystem or OTA in the bring-up firmware | Accepted |
 | [0010](0010-software-stack.md) | ESP-IDF 5.5.5 + Waveshare BSP 3.0.1 + LVGL 9.5 | Accepted |
 | [0011](0011-deferred-app-switching.md) | Defer app switches out of LVGL event callbacks | Accepted |
+| [0012](0012-dashboard-cards.md) | Dashboard card grid with fullscreen detail views | Accepted |
+| [0013](0013-audio-output-tuner.md) | Audio output ownership and tuner signal chain | Accepted |
 
 ## Format
 
