@@ -4,8 +4,6 @@
 
 #define AUDIO_TWO_PI 6.283185307179586476925286766559
 
-#define SPECTRUM_FLOOR_DB (-120.0f)
-
 void audio_fft_init(audio_fft_t *fft)
 {
     if (fft == NULL) {
@@ -28,17 +26,18 @@ void audio_fft_init(audio_fft_t *fft)
         fft->twiddle_sin[k] = (float)-sin(phase);
     }
 
-    /* One-sided RMS scaling: a full-scale sine reads -3.01 dBFS. */
-    fft->rms_scale = (float)(sqrt(2.0) / window_sum);
-    fft->dc_scale = (float)(1.0 / window_sum);
+    double window_sum_sq = window_sum * window_sum;
+    /* Raw |X[k]|^2 -> one-sided RMS power: full-scale sine = 0.5. */
+    fft->bin_power_scale = (float)(2.0 / window_sum_sq);
+    fft->dc_power_scale = (float)(1.0 / window_sum_sq);
     /* Remove the Hann noise-bandwidth gain when summing bins into bands. */
-    fft->power_scale = (float)((window_sum * window_sum) /
+    fft->power_scale = (float)(window_sum_sq /
                                ((double)AUDIO_FFT_SIZE * window_energy));
 }
 
-void audio_fft_spectrum_db(audio_fft_t *fft, const float *samples, float *spectrum_db)
+void audio_fft_power(audio_fft_t *fft, const float *samples, float *power_out)
 {
-    if (fft == NULL || samples == NULL || spectrum_db == NULL) {
+    if (fft == NULL || samples == NULL || power_out == NULL) {
         return;
     }
 
@@ -85,16 +84,8 @@ void audio_fft_spectrum_db(audio_fft_t *fft, const float *samples, float *spectr
     }
 
     for (size_t k = 0; k < AUDIO_FFT_BINS; k++) {
-        float magnitude = sqrtf(fft->re[k] * fft->re[k] + fft->im[k] * fft->im[k]);
-        float scale = (k == 0) ? fft->dc_scale : fft->rms_scale;
-        float amplitude = magnitude * scale;
-        float db = SPECTRUM_FLOOR_DB;
-        if (amplitude > 0.0f) {
-            db = 20.0f * log10f(amplitude);
-            if (db < SPECTRUM_FLOOR_DB) {
-                db = SPECTRUM_FLOOR_DB;
-            }
-        }
-        spectrum_db[k] = db;
+        float raw_power = fft->re[k] * fft->re[k] + fft->im[k] * fft->im[k];
+        float scale = (k == 0) ? fft->dc_power_scale : fft->bin_power_scale;
+        power_out[k] = raw_power * scale;
     }
 }

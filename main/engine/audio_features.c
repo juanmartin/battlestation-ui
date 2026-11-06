@@ -6,11 +6,14 @@
 #include "audio_format.h"
 
 #define DBFS_FLOOR (-96.0f)
+#define AUDIO_SPECTRUM_LOG_DECIMATION 4u
 
 const float audio_features_band_centers_hz[AUDIO_BAND_COUNT] = {
     44.2f, 62.5f, 88.4f, 125.0f, 176.8f, 250.0f, 353.6f, 500.0f,
     707.0f, 1000.0f, 1414.0f, 2000.0f, 2828.0f, 4000.0f, 5657.0f, 8000.0f,
 };
+
+static volatile float s_warmup_sink;
 
 static float dbfs_from_rms(double sum_squares, int count)
 {
@@ -23,6 +26,15 @@ static float dbfs_from_rms(double sum_squares, int count)
     }
     float db = 20.0f * log10f((float)(rms / 32768.0));
     return db < DBFS_FLOOR ? DBFS_FLOOR : db;
+}
+
+static float power_to_db(float power)
+{
+    if (!(power > 0.0f)) {
+        return AUDIO_FEATURE_FLOOR_DB;
+    }
+    float db = 10.0f * log10f(power);
+    return db < AUDIO_FEATURE_FLOOR_DB ? AUDIO_FEATURE_FLOOR_DB : db;
 }
 
 void audio_features_levels_init(audio_levels_ctx_t *ctx)
@@ -150,6 +162,10 @@ void audio_features_init(audio_features_ctx_t *ctx)
     audio_fft_init(&ctx->fft);
     memset(ctx->history, 0, sizeof(ctx->history));
     memset(ctx->fft_input, 0, sizeof(ctx->fft_input));
+    memset(ctx->spectrum_power, 0, sizeof(ctx->spectrum_power));
+    for (size_t k = 0; k < AUDIO_FFT_BINS; k++) {
+        ctx->spectrum_db[k] = AUDIO_FEATURE_FLOOR_DB;
+    }
     ctx->history_count = 0;
     ctx->history_pos = 0;
     ctx->fft_count = 0;
@@ -160,6 +176,31 @@ void audio_features_init(audio_features_ctx_t *ctx)
                                    audio_features_band_centers_hz[i]);
     }
     ctx->band_edges[AUDIO_BAND_COUNT] = (float)AUDIO_SAMPLE_RATE_HZ / 2.0f;
+
+    const float bin_hz = (float)AUDIO_SAMPLE_RATE_HZ / (float)AUDIO_FFT_SIZE;
+    for (size_t b = 0; b < AUDIO_BAND_COUNT; b++) {
+        uint16_t start = (b == 0) ? 0u : ctx->band_bin_end[b - 1u];
+        while (start < AUDIO_FFT_BINS &&
+               (float)start * bin_hz < ctx->band_edges[b]) {
+            start++;
+        }
+        uint16_t end = start;
+        while (end < AUDIO_FFT_BINS &&
+               (float)end * bin_hz < ctx->band_edges[b + 1u]) {
+            end++;
+        }
+        ctx->band_bin_start[b] = start;
+        ctx->band_bin_end[b] = end;
+    }
+
+    /*
+     * Warm the FFT code/data cache on zeros. This must not count as a
+     * transform or publish any spectrum data.
+     */
+    audio_fft_power(&ctx->fft, ctx->fft_input, ctx->spectrum_power);
+    s_warmup_sink = ctx->spectrum_power[0] +
+                    ctx->spectrum_power[AUDIO_FFT_BINS - 1u];
+    memset(ctx->spectrum_power, 0, sizeof(ctx->spectrum_power));
 }
 
 void audio_features_process(audio_features_ctx_t *ctx,
@@ -199,9 +240,6 @@ void audio_features_process(audio_features_ctx_t *ctx,
     out_features->fft_bins = (uint16_t)AUDIO_FFT_BINS;
     out_features->bin_hz = (float)AUDIO_SAMPLE_RATE_HZ / (float)AUDIO_FFT_SIZE;
 
-    for (size_t k = 0; k < AUDIO_FFT_BINS; k++) {
-        out_features->spectrum_db[k] = AUDIO_FEATURE_FLOOR_DB;
-    }
     for (size_t b = 0; b < AUDIO_BAND_COUNT; b++) {
         out_features->band_db[b] = AUDIO_FEATURE_FLOOR_DB;
     }
@@ -211,30 +249,25 @@ void audio_features_process(audio_features_ctx_t *ctx,
         for (size_t i = 0; i < AUDIO_FFT_SIZE; i++) {
             ctx->fft_input[i] = ctx->history[(start + i) % AUDIO_FFT_SIZE];
         }
-        audio_fft_spectrum_db(&ctx->fft, ctx->fft_input, out_features->spectrum_db);
+        audio_fft_power(&ctx->fft, ctx->fft_input, ctx->spectrum_power);
         ctx->fft_count++;
+
+        if (((ctx->fft_count - 1u) % AUDIO_SPECTRUM_LOG_DECIMATION) == 0u) {
+            for (size_t k = 0; k < AUDIO_FFT_BINS; k++) {
+                ctx->spectrum_db[k] = power_to_db(ctx->spectrum_power[k]);
+            }
+        }
     }
     out_features->fft_count = ctx->fft_count;
+    memcpy(out_features->spectrum_db, ctx->spectrum_db, sizeof(ctx->spectrum_db));
 
     for (size_t b = 0; b < AUDIO_BAND_COUNT; b++) {
-        double power = 0.0;
-        for (size_t k = 0; k < AUDIO_FFT_BINS; k++) {
-            float freq = (float)k * out_features->bin_hz;
-            if (freq < ctx->band_edges[b] || freq >= ctx->band_edges[b + 1u]) {
-                continue;
-            }
-            if (out_features->spectrum_db[k] <= AUDIO_FEATURE_FLOOR_DB) {
-                continue;
-            }
-            power += (double)powf(10.0f, out_features->spectrum_db[k] / 10.0f);
+        float power = 0.0f;
+        for (uint16_t k = ctx->band_bin_start[b]; k < ctx->band_bin_end[b]; k++) {
+            power += ctx->spectrum_power[k];
         }
-        if (power > 0.0) {
-            float db = 10.0f * log10f((float)(power * (double)ctx->fft.power_scale));
-            if (db < AUDIO_FEATURE_FLOOR_DB) {
-                db = AUDIO_FEATURE_FLOOR_DB;
-            }
-            out_features->band_db[b] = db;
-        }
+        power *= ctx->fft.power_scale;
+        out_features->band_db[b] = power_to_db(power);
     }
 
     out_features->levels = *out_levels;

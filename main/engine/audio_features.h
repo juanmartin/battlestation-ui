@@ -60,6 +60,10 @@ typedef struct {
     size_t history_pos;
     uint32_t fft_count;
     float band_edges[AUDIO_BAND_COUNT + 1u];
+    uint16_t band_bin_start[AUDIO_BAND_COUNT];
+    uint16_t band_bin_end[AUDIO_BAND_COUNT];
+    float spectrum_power[AUDIO_FFT_BINS];
+    float spectrum_db[AUDIO_FFT_BINS];
 } audio_features_ctx_t;
 
 /* Nominal half-octave band centers (ADR-0014). */
