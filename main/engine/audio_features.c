@@ -200,6 +200,10 @@ void audio_features_init(audio_features_ctx_t *ctx)
     audio_fft_power(&ctx->fft, ctx->fft_input, ctx->spectrum_power);
     s_warmup_sink = ctx->spectrum_power[0] +
                     ctx->spectrum_power[AUDIO_FFT_BINS - 1u];
+    /* Warm the libm log path used by the spectrum dB conversion. */
+    for (size_t k = 0; k < AUDIO_FFT_BINS; k++) {
+        s_warmup_sink += power_to_db(1e-6f + (float)k * 1e-9f);
+    }
     memset(ctx->spectrum_power, 0, sizeof(ctx->spectrum_power));
 }
 
