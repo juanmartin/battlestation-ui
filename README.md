@@ -45,6 +45,7 @@ Full evidence and open items: [`docs/status.md`](docs/status.md).
 | `components/esp_lvgl_adapter/` | Local 0.7.5 override — the only vendored dependency |
 | `docs/` | Handbook: status, hardware, bring-up, stability, architecture, roadmap, ADRs |
 | `probes/dsi/` | Standalone raw `esp_lcd` DSI stress test |
+| `tests/host/` | Host-side FFT, features and mixer tests (no hardware) |
 | `patches/` | Patches kept for provenance/reuse, not applied by default |
 | `tools/fetch_upstream.sh` | Fetches pinned upstream sources into a gitignored cache |
 | `sdkconfig.rev1_3.defaults` | Build overlay for the rev1.3 silicon on this unit |

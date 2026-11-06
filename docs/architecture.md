@@ -1,8 +1,8 @@
 # Architecture
 
 Target architecture for the product, plus the portability boundary. The current
-firmware is the M5 launcher shell in `main/`; the service/app split below is the
-M6–M11 destination, not yet implemented.
+firmware is the M5 launcher plus the M6 audio service; the remaining app and
+dashboard work is the M7–M11 destination.
 
 ## Principles
 
