@@ -10,7 +10,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_timer.h"
-#include "ui_probe.h"
+#include "app_manager.h"
 
 static const char *TAG = "diag_probe";
 static lv_display_t *s_disp;
@@ -78,8 +78,8 @@ static void diag_task(void *arg)
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(5000));
 
-        uint32_t heartbeat = ui_probe_heartbeat();
-        uint32_t fps = ui_probe_fps();
+        uint32_t heartbeat = app_manager_heartbeat();
+        uint32_t fps = app_manager_fps();
         TaskHandle_t lvgl = xTaskGetHandle("lvgl");
         TaskHandle_t audio = xTaskGetHandle("audio_probe");
         eTaskState lvgl_state = lvgl ? eTaskGetState(lvgl) : eDeleted;

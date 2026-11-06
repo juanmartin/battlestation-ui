@@ -1,8 +1,9 @@
 # Status
 
 **As of:** 2026-11-06  
-**Milestone:** M4 complete — integrated bring-up probe stable on hardware  
-**Firmware tag:** `bringup-m1`
+**Milestone:** M4 complete on `main`; M5 launcher shell implemented on
+`m5-launcher`, pending hardware acceptance  
+**Firmware tag:** `bringup-m1` (stable bring-up)
 
 ## Verified unit
 
@@ -80,8 +81,37 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | HA integration | Not started | M7 |
 | Launcher / app manager | Not started | M5 |
 
+## M5 launcher shell (branch `m5-launcher`)
+
+Implemented in firmware and build-verified for rev1.3; hardware acceptance is
+still pending.
+
+- `app_manager` with a static table of four apps: **launcher**, **dashboard**,
+  **organism** (placeholder), **settings**.
+- Launcher home grid with tappable tiles and a persistent `HOME` button on every
+  non-launcher screen.
+- Dashboard is the existing bring-up probe, mounted/unmounted as an app.
+- Settings has a live brightness slider; organism is an M8 placeholder.
+- App switching is deferred to the manager timer so an LVGL event target is
+  never deleted inside its own callback ([ADR-0011](decisions/0011-deferred-app-switching.md)).
+- Manager owns the heartbeat/FPS counters so diagnostics stay valid across
+  switches.
+- Build: ~1.09 MB, 87% of the 8 MB app slot free.
+- Self-test: **100 switches passed** on hardware — LVGL child count 6 → 6
+  (delta 0), PSRAM delta 0, internal heap delta 484 B, no errors. Boot to
+  launcher ~1.5 s.
+
+Acceptance still to run on hardware:
+
+- [x] Boot reaches the launcher in < 3 s (measured ~1.5 s).
+- [x] 100 app switches without crash or LVGL object growth (self-test).
+- [ ] Dashboard, audio, Wi-Fi and touch still behave after repeated switches
+      (audio/Wi-Fi verified; touch still manual).
+- [ ] Brightness slider changes the panel immediately (manual).
+- [ ] 10-minute idle soak from the launcher (running).
+
 ## Next
 
-1. Close the 10-minute idle soak.
-2. Start **M5 — launcher shell** (`app_manager`, static app table, home grid).
-3. Keep decisions current in [`decisions/`](decisions/).
+1. Flash `m5-launcher` and run the M5 acceptance checks.
+2. Close the 10-minute idle soak.
+3. Start **M6 — shared audio service + analysis**.

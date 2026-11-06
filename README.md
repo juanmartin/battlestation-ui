@@ -4,13 +4,15 @@ Firmware and engineering notes for the **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B**
 (ESP32-P4 rev1.3 + ESP32-C6, 7-inch 1024×600 MIPI-DSI, GT911 touch,
 ES7210 microphones, ES8311 speaker path).
 
-The current image is a **bring-up probe**: one firmware that proves display,
-touch, LVGL, stereo microphone capture and hosted Wi-Fi simultaneously. The
-launcher, dashboard and generative organism come next.
+The `main` branch carries the stable bring-up probe: one firmware that proves
+display, touch, LVGL, stereo microphone capture and hosted Wi-Fi simultaneously.
+The `m5-launcher` branch adds the launcher shell, static app table and settings
+placeholder. The dashboard, organism and Home Assistant integrations follow.
 
 ## Status
 
-**Milestone:** M4 complete — integrated probe stable on hardware.
+**Milestone:** M4 complete on `main`; M5 launcher shell implemented on
+`m5-launcher`, pending hardware acceptance.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -20,6 +22,9 @@ launcher, dashboard and generative organism come next.
   `esp_lvgl_adapter` 0.7.5 override.
 - 386 s display/audio/touch soak and 341 s Wi-Fi + ping + touch + audio soak
   passed with zero UI stalls.
+- M5 launcher shell on `m5-launcher`: four static apps, home grid, persistent
+  HOME button and a live brightness slider; build verified, hardware acceptance
+  pending.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 

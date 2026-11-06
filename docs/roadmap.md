@@ -10,7 +10,7 @@ validation gates.
 | M2 — Audio capture and playback | **Done** 2026-11-06 | Stereo capture, echo path, gain |
 | M3 — Hosted Wi-Fi | **Done** 2026-11-06 | C6 handshake, IP, ping |
 | M4 — Integrated probe | **Done** 2026-11-06 | All paths concurrent, soaks |
-| M5 — Launcher shell | **Next** | App switching, no leak |
+| M5 — Launcher shell | **In progress** | App switching, no leak |
 | M6 — Shared audio service + analysis | Planned | Analysis < 5 ms/frame |
 | M7 — Dashboard + Home Assistant | Planned | HA control + state push |
 | M8 — Generative organism | Planned | ≥ 30 fps, no UI stall |
@@ -64,8 +64,12 @@ touch raises it to ~60 fps. That is not a rendering ceiling.
   placeholder.
 - **Accept:** 100 app switches with no crash/leak; LVGL object count returns to
   baseline; brightness works; boot to launcher < 3 s.
-- **First tasks:** close the 10-minute idle soak, then create `app_manager` and
-  the static app table.
+- **Implemented on `m5-launcher`:** `app_manager`, four static apps (launcher,
+  dashboard, organism placeholder, settings), home grid, persistent HOME button,
+  live brightness slider. Build verified; hardware acceptance in progress.
+- **Self-test result:** 100 switches, child count 6 → 6, PSRAM delta 0,
+  internal heap delta 484 B, no errors. Boot to launcher ~1.5 s.
+- **Next:** finish the 10-minute idle soak and manually verify touch + slider.
 
 ## M6 — Shared audio service + analysis
 

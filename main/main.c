@@ -5,10 +5,10 @@
 #include "freertos/task.h"
 
 #include "audio_probe.h"
+#include "app_manager.h"
 #include "diag_probe.h"
 #include "bsp/display.h"
 #include "bsp/esp-bsp.h"
-#include "ui_probe.h"
 #include "wifi_probe.h"
 
 static const char *TAG = "battlestation";
@@ -66,9 +66,9 @@ void app_main(void)
         ESP_LOGE(TAG, "audio task start failed: %s", esp_err_to_name(err));
     }
 
-    err = ui_probe_start(disp);
+    err = app_manager_start(disp);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "UI start failed: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "launcher start failed: %s", esp_err_to_name(err));
         abort();
     }
 
@@ -82,7 +82,7 @@ void app_main(void)
         ESP_LOGE(TAG, "diagnostic task start failed: %s", esp_err_to_name(err));
     }
 
-    ESP_LOGI(TAG, "bring-up ready: display + touch + LVGL + ES7210 + hosted Wi-Fi");
+    ESP_LOGI(TAG, "bring-up ready: launcher + display + touch + LVGL + ES7210 + hosted Wi-Fi");
     ESP_LOGI(TAG, "internal heap=%u  PSRAM free=%u",
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));

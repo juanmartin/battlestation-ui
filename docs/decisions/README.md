@@ -18,6 +18,7 @@ a decision changes; do not silently rewrite history.
 | [0008](0008-audio-baseline.md) | 16 kHz stereo 16-bit, 24 dB PGA, dBFS only | Accepted |
 | [0009](0009-no-filesystem-or-ota.md) | No filesystem or OTA in the bring-up firmware | Accepted |
 | [0010](0010-software-stack.md) | ESP-IDF 5.5.5 + Waveshare BSP 3.0.1 + LVGL 9.5 | Accepted |
+| [0011](0011-deferred-app-switching.md) | Defer app switches out of LVGL event callbacks | Accepted |
 
 ## Format
 
