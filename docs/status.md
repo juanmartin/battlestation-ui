@@ -113,16 +113,16 @@ Acceptance on hardware:
 - [x] Touch still responds after repeated switches (manual).
 - [x] Brightness slider changes the panel immediately (manual, 2026-11-07).
 
-## M6 audio service (branch `m6-audio-service`)
+## M6 audio service (merged)
 
-Implemented and validated except for the final duplex soak:
+Implemented, validated and merged to `main`.
 
 - `audio_service` owns the duplex I2S bus, ES7210 capture, ES8311 playback,
   capture readers and three playback lanes with a pure-C mixer.
 - `audio_analysis` runs at 20 ms: legacy RMS/dBFS/peak, 1 s Leq, 1024-point
   FFT, 16 half-octave bands, seqlock feature snapshot.
 - Capture refactor is behavior-preserving; M5 UI is unchanged.
-- Analysis time: **1.44 ms steady / 1.75 ms max** over 45 s (gate < 5 ms).
+- Analysis time: **1.44 ms steady / 1.90 ms max** (gate < 5 ms).
 - Test tone: 1 kHz −20 dBFS for 2 s, then muted; zero write errors and
   `under=0`.
 - Normal build: speaker opens with the same 16 kHz/2/16 format, starts muted,
@@ -139,4 +139,3 @@ Detail: [`m6-audio-validation.md`](m6-audio-validation.md).
 ## Next
 
 1. Start **M7 — dashboard cards + Home Assistant**.
-2. Tag M6 if not already tagged.
