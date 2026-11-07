@@ -127,6 +127,18 @@ the detailed document instead of duplicating it.
   `under=0`, PSRAM delta 0, internal heap stable at ~246 KB, 36.3 °C, `dsp`
   max 1.90 ms. Zero errors/stalls/resets.
 
+## 2026-11-07 — Brightness verified; local CI replaces GitHub Actions
+
+- Brightness slider verified on hardware; M5 acceptance is now complete.
+- GitHub Actions is blocked by an account billing issue. Removed the workflow
+  and added local CI: `make ci` runs whitespace checks, host DSP tests and the
+  rev1.3 firmware build. `make ci-quick`, `make host`, `make firmware` and
+  `make asan` are available.
+- Optional versioned git hooks: `pre-commit` runs `--quick`, `pre-push` runs the
+  full gate; install with `tools/install_git_hooks.sh`.
+- Hosted alternatives and the rationale are documented in
+  [`ci.md`](ci.md).
+
 ## Next
 
 - Start M7 — dashboard cards + Home Assistant.

@@ -25,7 +25,7 @@ lights), the organism and the tuner/tone lab.
   passed with zero UI stalls.
 - M5 launcher shell merged: four static apps, home grid, persistent HOME button
   and a live brightness slider. 100-switch self-test and 611 s soak passed;
-  touch navigation verified; brightness visual check pending.
+  touch and brightness verified on hardware (2026-11-07).
 - Roadmap: dashboard cards (clock, weather, status, four HA lights with detail
   views) and a tuner/tone lab (guitar tuner, waveform generator, graphs,
   metronome).
@@ -45,6 +45,7 @@ Full evidence and open items: [`docs/status.md`](docs/status.md).
 | `docs/` | Handbook: status, hardware, bring-up, stability, architecture, roadmap, ADRs |
 | `probes/dsi/` | Standalone raw `esp_lcd` DSI stress test |
 | `tests/host/` | Host-side FFT, features and mixer tests (no hardware) |
+| `Makefile` / `tools/ci.sh` | Local CI: whitespace, host tests and rev1.3 firmware build |
 | `patches/` | Patches kept for provenance/reuse, not applied by default |
 | `tools/fetch_upstream.sh` | Fetches pinned upstream sources into a gitignored cache |
 | `sdkconfig.rev1_3.defaults` | Build overlay for the rev1.3 silicon on this unit |
@@ -70,6 +71,18 @@ Use the USB-C port labeled **“USB TO UART”** (CH343P). The Type-A port is a 
 host and cannot flash the board. See [`docs/bringup.md`](docs/bringup.md) for
 the full sequence, revision handling and troubleshooting.
 
+## Local CI
+
+```bash
+make ci          # whitespace + host tests + rev1.3 firmware build
+make ci-quick    # whitespace + host tests only
+make asan        # host tests with ASan/UBSan
+tools/install_git_hooks.sh   # optional pre-commit/pre-push hooks
+```
+
+No hosted runner is required; see [`docs/ci.md`](docs/ci.md) for the full gate
+and hosted alternatives.
+
 ## Documentation
 
 | Document | Contents |
@@ -78,6 +91,7 @@ the full sequence, revision handling and troubleshooting.
 | [`docs/progress.md`](docs/progress.md) | Dated engineering log |
 | [`docs/hardware.md`](docs/hardware.md) | Verified board architecture, pin map, USB, revision traps |
 | [`docs/bringup.md`](docs/bringup.md) | macOS/ESP-IDF setup, build, flash, acceptance checks |
+| [`docs/ci.md`](docs/ci.md) | Local CI, optional git hooks, hosted alternatives |
 | [`docs/stability.md`](docs/stability.md) | Display-freeze root cause, isolation matrix, chosen pipeline |
 | [`docs/architecture.md`](docs/architecture.md) | Target application architecture and portability boundary |
 | [`docs/roadmap.md`](docs/roadmap.md) | M0–M11 with status and acceptance criteria |

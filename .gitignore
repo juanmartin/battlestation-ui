@@ -19,6 +19,10 @@ sdkconfig.wifi.local
 # upstream source cache (tools/fetch_upstream.sh)
 /external/
 
+# local CI generated configs
+sdkconfig.ci*
+build-ci*.log
+
 # local vendor documents (datasheets, schematics); keep the index only
 docs/reference/*
 !docs/reference/README.md

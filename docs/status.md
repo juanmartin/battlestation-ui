@@ -1,6 +1,6 @@
 # Status
 
-**As of:** 2026-11-06  
+**As of:** 2026-11-07  
 **Milestone:** M6 audio service complete and merged to `main`; M7 dashboard next  
 **Firmware tag:** `bringup-m1` (stable bring-up), `m6` (audio service)
 
@@ -78,12 +78,12 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | Wi-Fi latency | 30.9 ms avg, 1.6% loss | Acceptable for HA; tune later |
 | dBFS calibration | Not calibrated | Displayed value is relative digital level, not dB SPL |
 | HA integration | Not started | M7 |
-| Launcher / app manager | M5 merged to `main` | Brightness slider visual check |
+| Launcher / app manager | **Done**, merged | Touch and brightness verified 2026-11-07 |
 | M6 audio service | **Done**, merged | — |
 
 ## M5 launcher shell
 
-Merged to `main`; only the brightness slider visual check remains.
+Merged to `main`; touch and brightness verified on hardware (2026-11-07).
 
 - `app_manager` with a static table of four apps: **launcher**, **dashboard**,
   **organism** (placeholder), **settings**.
@@ -110,8 +110,8 @@ Acceptance on hardware:
 - [x] 100 app switches without crash or LVGL object growth (self-test).
 - [x] 10-minute idle soak from the launcher.
 - [x] Audio and Wi-Fi continue running across app switches.
-- [ ] Touch still responds after repeated switches (manual).
-- [ ] Brightness slider changes the panel immediately (manual).
+- [x] Touch still responds after repeated switches (manual).
+- [x] Brightness slider changes the panel immediately (manual, 2026-11-07).
 
 ## M6 audio service (branch `m6-audio-service`)
 

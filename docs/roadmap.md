@@ -67,7 +67,7 @@ touch raises it to ~60 fps. That is not a rendering ceiling.
   baseline; brightness works; boot to launcher < 3 s.
 - **Result:** merged to `main`. 100 switches with child count 6 → 6, PSRAM delta
   0, internal heap delta 484 B; 611 s launcher soak with zero stalls; boot
-  ~1.5 s. Brightness slider visual check remains manual.
+  ~1.5 s. Touch and brightness verified on hardware 2026-11-07.
 
 ## M6 — Shared audio service + analysis
 
