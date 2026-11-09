@@ -86,3 +86,60 @@ menu "Battlestation bring-up"
             lane. Diagnostic test image only; normal M6 operation starts muted.
 
 endmenu
+
+menu "Battlestation dashboard"
+
+    config APP_TIMEZONE
+        string "POSIX timezone (for example UTC0 or CET-1CEST)"
+        default "UTC0"
+        help
+            Applied with setenv("TZ") + tzset() before SNTP starts. The
+            dashboard shows the local time only after NTP sets a valid clock.
+
+    config APP_HA_URL
+        string "Home Assistant base URL (empty disables HA)"
+        default ""
+        help
+            For example http://homeassistant.local:8123. Both the URL and the
+            long-lived access token must be set for the HA client to run. The
+            token is never written to logs.
+
+    config APP_HA_TOKEN
+        string "Home Assistant long-lived access token"
+        default ""
+        help
+            Keep this out of git. The empty default makes the dashboard render
+            an honest offline state until M10 adds runtime provisioning.
+
+    config APP_LIGHT_ENTITY_0
+        string "Light 0 entity ID"
+        default ""
+        help
+            Home Assistant entity ID for the first light card.
+
+    config APP_LIGHT_ENTITY_1
+        string "Light 1 entity ID"
+        default ""
+        help
+            Home Assistant entity ID for the second light card.
+
+    config APP_LIGHT_ENTITY_2
+        string "Light 2 entity ID"
+        default ""
+        help
+            Home Assistant entity ID for the third light card.
+
+    config APP_LIGHT_ENTITY_3
+        string "Light 3 entity ID"
+        default ""
+        help
+            Home Assistant entity ID for the fourth light card.
+
+    config APP_WEATHER_ENTITY
+        string "Weather entity ID"
+        default ""
+        help
+            Home Assistant weather entity shown by the weather card. Leave
+            empty to show the not-configured placeholder.
+
+endmenu

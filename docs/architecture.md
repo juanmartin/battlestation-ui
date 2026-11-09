@@ -29,11 +29,12 @@ Decision: [ADR-0001](decisions/0001-single-firmware-static-apps.md).
 
 ## Target layout
 
-> **Current implementation:** M5 launcher plus the M6 audio service:
-> `main/services/audio_service.*` (capture + playback lanes + mixer),
-> `main/services/audio_analysis.*`, and `main/engine/*` DSP/ring code. The
-> dashboard still uses the bring-up probe internals; the Tuner app arrives at
-> M9. Evidence: [`m6-audio-validation.md`](m6-audio-validation.md).
+> **Current implementation:** M5 launcher, M6 audio service and M7a dashboard
+> shell: `main/services/audio_service.*`, `audio_analysis.*`, `time_service.*`,
+> `ha_client.*` (stub), `main/engine/*` and `main/apps/dashboard.c`. HA
+> transport/weather is M7b; the Tuner app arrives at M9. Evidence:
+> [`m6-audio-validation.md`](m6-audio-validation.md),
+> [`m7-dashboard-validation.md`](m7-dashboard-validation.md).
 
 ```text
 battlestation-ui/

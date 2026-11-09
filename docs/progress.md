@@ -139,6 +139,20 @@ the detailed document instead of duplicating it.
 - Hosted alternatives and the rationale are documented in
   [`ci.md`](ci.md).
 
+## 2026-11-09 — M7a dashboard shell
+
+- Replaced the probe-as-dashboard with a card grid: clock, weather, status and
+  four light cards; fullscreen detail views with BACK.
+- Added `time_service` (SNTP) and an HA client stub; unconfigured HA shows an
+  honest offline state and a clearly labelled local preview for light controls.
+- Moved the old probe to the Diagnostics app, reachable from the status card.
+- Added Kconfig for timezone, HA URL/token, four light entities and weather
+  entity.
+- 100-switch self-test: dashboard mounted 25 times, child 6 → 6, PSRAM delta 0,
+  no errors/stalls. 30 s device smoke passed with Wi-Fi.
+- Pending: visual layout/detail check; M7b HA transport and weather.
+
 ## Next
 
-- Start M7 — dashboard cards + Home Assistant.
+- Visual check of the dashboard/detail views.
+- M7b — HA REST/WebSocket, four real lights, weather.

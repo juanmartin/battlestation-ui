@@ -13,7 +13,8 @@ lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M6 audio service complete and merged to `main`; M7 dashboard next.
+**Milestone:** M7a dashboard shell implemented on `m7-dashboard`; M7b Home
+Assistant transport next.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -33,6 +34,9 @@ lights), the organism and the tuner/tone lab.
   16 half-octave bands and Leq, three playback lanes and a pure-C mixer.
   Analysis 1.44 ms steady / 1.90 ms max; 615 s duplex soak with zero
   errors/stalls and `under=0`; host tests 3/3.
+- M7a dashboard shell: clock/SNTP, weather placeholder, Wi-Fi/audio status and
+  four light cards with detail views; HA stub shows offline honestly. Dashboard
+  mount/unmount passed 25 cycles in the 100-switch self-test.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 

@@ -10,6 +10,8 @@
 #include "diag_probe.h"
 #include "bsp/display.h"
 #include "bsp/esp-bsp.h"
+#include "ha_client.h"
+#include "time_service.h"
 #include "wifi_probe.h"
 
 #if CONFIG_APP_AUDIO_TEST_TONE
@@ -92,6 +94,16 @@ void app_main(void)
     err = wifi_probe_start();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Wi-Fi task start failed: %s", esp_err_to_name(err));
+    }
+
+    err = time_service_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "time service start failed: %s", esp_err_to_name(err));
+    }
+
+    err = ha_client_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "HA client start failed: %s", esp_err_to_name(err));
     }
 
     err = diag_probe_start(disp);

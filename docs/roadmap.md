@@ -101,6 +101,9 @@ configuration are defined in
 - Card grid, detail views, clock/SNTP, Wi-Fi/audio status.
 - Four light cards with on/off + brightness controls.
 - HA client stubbed: “not configured/offline” state, no fake data.
+- **Result:** implemented; dashboard mounted/unmounted 25 times in the
+  100-switch self-test with child delta 0 and no errors/stalls; 30 s device
+  smoke passed. Visual check pending.
 
 **M7b — integration**
 - HA WebSocket + REST client, state sync and four light entities.

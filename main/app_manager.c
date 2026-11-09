@@ -30,6 +30,7 @@ static const app_desc_t *const s_apps[] = {
     &dashboard_app,
     &organism_app,
     &settings_app,
+    &diagnostics_app,
 };
 
 static const app_desc_t *find_app(const char *id)
