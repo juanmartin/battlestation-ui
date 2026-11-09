@@ -12,7 +12,7 @@ validation gates.
 | M4 — Integrated probe | **Done** 2026-11-06 | All paths concurrent, soaks |
 | M5 — Launcher shell | **Done**, merged | App switching, no leak |
 | M6 — Shared audio service + analysis | **Done** 2026-11-06 | Analysis < 5 ms/frame |
-| M7 — Dashboard + Home Assistant | Planned | 4 lights, clock, weather, detail views |
+| M7 — Dashboard + Home Assistant | **In progress** | 4 lights, clock, weather, detail views |
 | M8 — Generative organism | Planned | ≥ 30 fps, no UI stall |
 | M9 — Tuner + tone lab | Planned | Tuning accuracy, clean output |
 | M10 — Settings and provisioning | Planned | Persistence, bad input handling |
@@ -93,20 +93,20 @@ touch raises it to ~60 fps. That is not a rendering ceiling.
 
 The dashboard is a grid of cards; tapping a card opens a fullscreen detail view
 with more information or controls. Back returns to the grid
-([ADR-0012](decisions/0012-dashboard-cards.md)).
+([ADR-0012](decisions/0012-dashboard-cards.md)). Data sources and HA
+configuration are defined in
+[ADR-0015](decisions/0015-dashboard-data-sources.md).
 
-- **Clock** — SNTP time, configurable timezone.
-- **Weather** — prefer an HA weather entity (no extra API key); external provider
-  later. Show temperature, condition and a short forecast; placeholder when
-  unavailable.
-- **System status** — Wi-Fi state/RSSI/IP, dB sound meter, heap/temperature.
-- **Home Assistant lights** — prepare four light cards with on/off and brightness
-  (color temperature if the entity supports it), state sync and a pending state
-  while a command is in flight.
-- **Detail views** — one card expands to a larger graph/control view; keep the
-  dashboard state alive underneath.
-- **Configuration** — HA URL/token and the four entity IDs can start in Kconfig;
-  runtime provisioning lands in M10.
+**M7a — shell**
+- Card grid, detail views, clock/SNTP, Wi-Fi/audio status.
+- Four light cards with on/off + brightness controls.
+- HA client stubbed: “not configured/offline” state, no fake data.
+
+**M7b — integration**
+- HA WebSocket + REST client, state sync and four light entities.
+- Weather from an HA weather entity.
+- Reconnect after Wi-Fi/HA drop; 30-minute soak.
+
 - **Accept:** clock and weather update; four lights reflect HA state and command
   in < 500 ms; state push < 1 s; detail open/close < 100 ms; dashboard ≥ 30 fps;
   reconnect after Wi-Fi or HA drop; 30-minute soak.
