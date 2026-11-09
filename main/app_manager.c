@@ -217,7 +217,13 @@ esp_err_t app_manager_start(lv_display_t *disp)
     lv_obj_set_style_radius(s_content, 0, 0);
     lv_obj_set_style_pad_all(s_content, 0, 0);
 
-    esp_err_t err = switch_locked(find_app("launcher"));
+    const app_desc_t *boot = find_app(CONFIG_APP_BOOT_APP);
+    if (boot == NULL) {
+        ESP_LOGW(TAG, "unknown boot app '%s'; using launcher",
+                 CONFIG_APP_BOOT_APP);
+        boot = find_app("launcher");
+    }
+    esp_err_t err = switch_locked(boot);
     if (err == ESP_OK) {
         s_timer = lv_timer_create(manager_timer_cb, 50, NULL);
         if (s_timer == NULL) {

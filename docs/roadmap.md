@@ -13,7 +13,7 @@ validation gates.
 | M5 — Launcher shell | **Done**, merged | App switching, no leak |
 | M6 — Shared audio service + analysis | **Done** 2026-11-06 | Analysis < 5 ms/frame |
 | M7 — Dashboard + Home Assistant | **In progress** | 4 lights, clock, weather, detail views |
-| M8 — Generative organism | Planned | ≥ 30 fps, no UI stall |
+| M8 — Generative organism | **In progress** | ≥ 30 fps, no UI stall |
 | M9 — Tuner + tone lab | Planned | Tuning accuracy, clean output |
 | M10 — Settings and provisioning | Planned | Persistence, bad input handling |
 | M11 — Stabilization | Planned | 24 h soak, graceful degradation |
@@ -123,6 +123,10 @@ configuration are defined in
   touch + audio inputs.
 - **Accept:** ≥ 30 fps at target particle count; touch response < 50 ms; 30-min
   soak; no UI stall; engine builds/tests on macOS without LVGL.
+- **Result:** direct adapter framebuffer path (ADR-0016), 3072 particles,
+  **30.2 fps**, step 20.7 ms; 100-switch self-test with 25 organism mounts and
+  zero leaks. 10-minute soak: 615.6 s, 29.9–30.2 fps, zero errors/underruns,
+  stable heap/PSRAM. Visual check and full 30-minute soak pending.
 
 ## M9 — Tuner + tone lab
 

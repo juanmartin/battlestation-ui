@@ -11,6 +11,7 @@ set(main_srcs
     "engine/audio_features.c"
     "engine/audio_fft.c"
     "engine/audio_mixer.c"
+    "engine/organism_engine.c"
     "wifi_probe.c"
     "diag_probe.c"
     "apps/launcher.c"
