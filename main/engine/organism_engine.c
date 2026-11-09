@@ -10,6 +10,10 @@
 #define ORGANISM_LATTICE_SIZE 8
 #define ORGANISM_PALETTE_HUES 64
 #define ORGANISM_PALETTE_ROWS 8
+#define ORGANISM_BURST_FRAMES 26
+#define ORGANISM_BURST_RADIUS 320
+#define ORGANISM_BURST_RADIUS_SQ \
+    (ORGANISM_BURST_RADIUS * ORGANISM_BURST_RADIUS)
 #define ORGANISM_TWO_PI 6.283185307179586476925286766559
 
 /*
@@ -54,7 +58,10 @@ struct organism_engine {
     organism_audio_t smooth;
     organism_touch_t touch;
     int32_t touch_radius_sq;
-    uint32_t touch_inv_radius_q24;
+    int glow_radius;
+    int32_t burst_x;
+    int32_t burst_y;
+    int burst_age; /* 0 = idle, 1..ORGANISM_BURST_FRAMES while expanding */
     uint32_t field_scale_x;
     uint32_t field_scale_y;
     int16_t rot_cos[64];
@@ -273,6 +280,116 @@ static inline void plot_pixel(organism_engine_t *engine, uint16_t *buffer,
     put_pixel(buffer, engine->width, engine->height, x, y, color);
 }
 
+static inline uint16_t dim565(uint16_t color, int num, int den)
+{
+    if (num <= 0 || den <= 0) {
+        return 0;
+    }
+    if (num >= den) {
+        return color;
+    }
+    uint32_t r = ((color >> 11u) & 0x1Fu) * (uint32_t)num / (uint32_t)den;
+    uint32_t g = ((color >> 5u) & 0x3Fu) * (uint32_t)num / (uint32_t)den;
+    uint32_t b = (color & 0x1Fu) * (uint32_t)num / (uint32_t)den;
+    return (uint16_t)((r << 11u) | (g << 5u) | b);
+}
+
+/* 2x2 dot keeps the ripple visible on the 1024x600 panel. */
+static inline void plot_dot(organism_engine_t *engine, uint16_t *buffer,
+                            int x, int y, uint16_t color)
+{
+    plot_pixel(engine, buffer, x, y, color);
+    plot_pixel(engine, buffer, x + 1, y, color);
+    plot_pixel(engine, buffer, x, y + 1, color);
+    plot_pixel(engine, buffer, x + 1, y + 1, color);
+}
+
+/* Midpoint circle. The caller fades the color per frame for a soft trail. */
+static void draw_ring(organism_engine_t *engine, uint16_t *buffer,
+                      int cx, int cy, int radius, uint16_t color)
+{
+    if (radius <= 0) {
+        return;
+    }
+    int x = radius;
+    int y = 0;
+    int err = 1 - radius;
+    while (x >= y) {
+        plot_dot(engine, buffer, cx + x, cy + y, color);
+        plot_dot(engine, buffer, cx + y, cy + x, color);
+        plot_dot(engine, buffer, cx - y, cy + x, color);
+        plot_dot(engine, buffer, cx - x, cy + y, color);
+        plot_dot(engine, buffer, cx - x, cy - y, color);
+        plot_dot(engine, buffer, cx - y, cy - x, color);
+        plot_dot(engine, buffer, cx + y, cy - x, color);
+        plot_dot(engine, buffer, cx + x, cy - y, color);
+        y++;
+        if (err < 0) {
+            err += 2 * y + 1;
+        } else {
+            x--;
+            err += 2 * (y - x) + 1;
+        }
+    }
+}
+
+/*
+ * A soft palette-shaded disc under the fingertip. It is redrawn every frame
+ * and fades with the trails when the finger lifts, so it reads as a fluid
+ * glow instead of a hard HUD element.
+ */
+static void draw_touch_glow(organism_engine_t *engine, uint16_t *buffer,
+                            int cx, int cy)
+{
+    const int radius = engine->glow_radius;
+    const int radius_sq = radius * radius;
+    const int hue = 4;
+
+    for (int dy = -radius; dy <= radius; dy++) {
+        int y = cy + dy;
+        if ((unsigned)y >= (unsigned)engine->height) {
+            continue;
+        }
+        for (int dx = -radius; dx <= radius; dx++) {
+            int dist_sq = dx * dx + dy * dy;
+            if (dist_sq > radius_sq) {
+                continue;
+            }
+            int level = (radius_sq - dist_sq) * 4 / radius_sq;
+            if (level <= 0) {
+                continue;
+            }
+            uint16_t color = engine->palette[level * ORGANISM_PALETTE_HUES +
+                                             ((hue + level) & 63)];
+            plot_pixel(engine, buffer, cx + dx, y, color);
+        }
+    }
+}
+
+/* Expanding shockwave. Two rings and the trail fade make the tap obvious. */
+static void draw_burst(organism_engine_t *engine, uint16_t *buffer)
+{
+    const int age = engine->burst_age;
+    if (age <= 0 || age > ORGANISM_BURST_FRAMES) {
+        return;
+    }
+
+    const int fade = ORGANISM_BURST_FRAMES - age;
+    if (fade <= 0) {
+        return;
+    }
+    const int radius = 8 + age * 12;
+    const uint16_t base = engine->palette[7 * ORGANISM_PALETTE_HUES + 12];
+
+    draw_ring(engine, buffer, (int)engine->burst_x, (int)engine->burst_y,
+              radius, dim565(base, fade, ORGANISM_BURST_FRAMES));
+    if (radius > 24) {
+        draw_ring(engine, buffer, (int)engine->burst_x, (int)engine->burst_y,
+                  radius - 14,
+                  dim565(base, fade / 2, ORGANISM_BURST_FRAMES));
+    }
+}
+
 /*
  * Copy the previous frame while applying a channel-safe 50% fade. The current
  * front buffer is never mutated: the display may still be scanning it, so
@@ -370,13 +487,19 @@ organism_engine_t *organism_engine_create(const organism_engine_config_t *cfg)
     engine->field_scale_y = ((uint32_t)ORGANISM_FIELD_SIZE << 16u) /
                             (uint32_t)engine->height;
 
-    int radius = (engine->width < engine->height ? engine->width : engine->height) / 4;
+    int short_side = engine->width < engine->height ? engine->width
+                                                     : engine->height;
+    int radius = short_side / 3;
     if (radius < 24) {
         radius = 24;
     }
     engine->touch_radius_sq = (int32_t)radius * (int32_t)radius;
-    engine->touch_inv_radius_q24 =
-        (uint32_t)((1u << 24u) / (uint32_t)engine->touch_radius_sq);
+    engine->glow_radius = short_side / 12;
+    if (engine->glow_radius < 16) {
+        engine->glow_radius = 16;
+    } else if (engine->glow_radius > 56) {
+        engine->glow_radius = 56;
+    }
 
     build_field(engine->field, &engine->rng);
     build_palette(engine->palette);
@@ -419,9 +542,29 @@ void organism_engine_set_touch(organism_engine_t *engine, const organism_touch_t
         engine->touch.y = 0;
         return;
     }
+
+    const bool press_edge = !engine->touch.active;
     engine->touch.active = true;
     engine->touch.x = touch->x;
     engine->touch.y = touch->y;
+
+    if (press_edge) {
+        int x = touch->x;
+        int y = touch->y;
+        if (x < 0) {
+            x = 0;
+        } else if (x >= engine->width) {
+            x = engine->width - 1;
+        }
+        if (y < 0) {
+            y = 0;
+        } else if (y >= engine->height) {
+            y = engine->height - 1;
+        }
+        engine->burst_x = x;
+        engine->burst_y = y;
+        engine->burst_age = 1;
+    }
 }
 
 static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_t *src)
@@ -488,8 +631,14 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
         memset(dst, 0, engine->pixel_count * sizeof(uint16_t));
     }
 
+    if (touch_active) {
+        draw_touch_glow(engine, dst, touch_x, touch_y);
+    }
+
     const int32_t max_x = (int32_t)engine->width << 4;
     const int32_t max_y = (int32_t)engine->height << 4;
+    const bool burst_active = engine->burst_age > 0;
+    const int32_t burst_left = ORGANISM_BURST_FRAMES - engine->burst_age;
 
     for (int i = 0; i < engine->particle_count; i++) {
         organism_particle_t *p = &engine->particles[i];
@@ -513,26 +662,56 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
         int32_t tvy = ((int32_t)fv->x * ks + (int32_t)fv->y * kc) / 128;
         int32_t push_x = 0;
         int32_t push_y = 0;
+        int32_t p_touch_dist_sq = INT32_MAX;
 
         if (touch_active) {
             int32_t dx = (int32_t)touch_x - px;
             int32_t dy = (int32_t)touch_y - py;
             int32_t dist_sq = dx * dx + dy * dy;
+            p_touch_dist_sq = dist_sq;
             if (dist_sq < engine->touch_radius_sq) {
-                uint32_t falloff =
-                    (uint32_t)(engine->touch_radius_sq - dist_sq);
-                uint32_t falloff_q8 =
-                    (falloff * engine->touch_inv_radius_q24) >> 16u;
-                int32_t ax = (dx * (int32_t)falloff_q8) / 512;
-                int32_t ay = (dy * (int32_t)falloff_q8) / 512;
+                int32_t falloff_q8 =
+                    (engine->touch_radius_sq - dist_sq) * 256 /
+                    engine->touch_radius_sq;
+                int32_t inward_x = dx * falloff_q8 / 192;
+                int32_t inward_y = dy * falloff_q8 / 192;
+                int32_t swirl_x = -dy * falloff_q8 / 320;
+                int32_t swirl_y = dx * falloff_q8 / 320;
                 if (repel) {
-                    push_x = -ax / 4;
-                    push_y = -ay / 4;
+                    push_x = -inward_x;
+                    push_y = -inward_y;
                 } else {
-                    push_x = ax / 4;
-                    push_y = ay / 4;
+                    push_x = inward_x + swirl_x;
+                    push_y = inward_y + swirl_y;
                 }
             }
+        }
+
+        if (burst_active) {
+            int32_t dx = px - engine->burst_x;
+            int32_t dy = py - engine->burst_y;
+            int32_t dist_sq = dx * dx + dy * dy;
+            if (dist_sq < ORGANISM_BURST_RADIUS_SQ) {
+                int32_t falloff_q8 =
+                    (ORGANISM_BURST_RADIUS_SQ - dist_sq) * 256 /
+                    ORGANISM_BURST_RADIUS_SQ;
+                int32_t impulse = burst_left * 9;
+                push_x += dx * impulse * falloff_q8 / 32768;
+                push_y += dy * impulse * falloff_q8 / 32768;
+                push_x += -dy * impulse * falloff_q8 / 65536;
+                push_y += dx * impulse * falloff_q8 / 65536;
+            }
+        }
+
+        if (push_x > 480) {
+            push_x = 480;
+        } else if (push_x < -480) {
+            push_x = -480;
+        }
+        if (push_y > 480) {
+            push_y = 480;
+        } else if (push_y < -480) {
+            push_y = -480;
         }
 
         if (tvx > 512) {
@@ -556,7 +735,15 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
 
         if (p->vis <= vis_limit) {
             int hue = (p->hue + hue_shift) & 63;
-            uint16_t color = engine->palette[row * ORGANISM_PALETTE_HUES + hue];
+            int particle_row = row;
+            if (p_touch_dist_sq < engine->touch_radius_sq) {
+                particle_row += 2;
+                if (particle_row > ORGANISM_PALETTE_ROWS - 1) {
+                    particle_row = ORGANISM_PALETTE_ROWS - 1;
+                }
+            }
+            uint16_t color =
+                engine->palette[particle_row * ORGANISM_PALETTE_HUES + hue];
             int x = (int)(p->x >> 4);
             int y = (int)(p->y >> 4);
 
@@ -565,8 +752,16 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
             plot_pixel(engine, dst, x, y + 1, color);
             plot_pixel(engine, dst, x + 1, y + 1, color);
 
+            /* The fingertip core glows with a wider 3x3 dot. */
+            if (p_touch_dist_sq < 56 * 56) {
+                plot_pixel(engine, dst, x - 1, y, color);
+                plot_pixel(engine, dst, x + 2, y, color);
+                plot_pixel(engine, dst, x, y - 1, color);
+                plot_pixel(engine, dst, x, y + 2, color);
+            }
+
             /* A faint cross halo makes the 2x2 cores read as soft dots. */
-            int halo_row = row > 2 ? row - 2 : 1;
+            int halo_row = particle_row > 2 ? particle_row - 2 : 1;
             uint16_t halo =
                 engine->palette[halo_row * ORGANISM_PALETTE_HUES + hue];
             plot_pixel(engine, dst, x - 1, y, halo);
@@ -578,14 +773,20 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
             if (p->vx > 16 || p->vx < -16 || p->vy > 16 || p->vy < -16) {
                 int32_t tx = wrap_position(p->x - (int32_t)p->vx * 2, max_x);
                 int32_t ty = wrap_position(p->y - (int32_t)p->vy * 2, max_y);
-                int tail_row = row > 2 ? row - 2 : 1;
                 uint16_t tail =
-                    engine->palette[tail_row * ORGANISM_PALETTE_HUES + hue];
+                    engine->palette[halo_row * ORGANISM_PALETTE_HUES + hue];
                 plot_pixel(engine, dst, (int)(tx >> 4), (int)(ty >> 4), tail);
             }
         }
     }
 
+    if (burst_active) {
+        draw_burst(engine, dst);
+        engine->burst_age++;
+        if (engine->burst_age > ORGANISM_BURST_FRAMES) {
+            engine->burst_age = 0;
+        }
+    }
 }
 
 int organism_engine_step(organism_engine_t *engine)

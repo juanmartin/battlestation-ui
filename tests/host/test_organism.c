@@ -320,10 +320,61 @@ static void test_invalid_inputs(void)
     fixture_free(&fixture);
 }
 
+static void test_touch_reaction(void)
+{
+    fixture_t quiet;
+    fixture_t touched;
+    CHECK(fixture_init(&quiet, 0x42u));
+    CHECK(fixture_init(&touched, 0x42u));
+    if (quiet.engine == NULL || touched.engine == NULL) {
+        fixture_free(&quiet);
+        fixture_free(&touched);
+        return;
+    }
+
+    organism_audio_t audio = { 0.2f, 0.3f, 0.4f, 0.5f };
+    organism_touch_t none = { 0, 0, false };
+    organism_touch_t touch = { TEST_WIDTH / 2, TEST_HEIGHT / 2, true };
+
+    uint64_t quiet_sum = 0;
+    uint64_t touched_sum = 0;
+    for (int frame = 0; frame < 40; frame++) {
+        organism_touch_t t = (frame >= 5) ? touch : none;
+        organism_engine_set_audio(quiet.engine, &audio);
+        organism_engine_set_audio(touched.engine, &audio);
+        organism_engine_set_touch(quiet.engine, &none);
+        organism_engine_set_touch(touched.engine, &t);
+
+        int qi = organism_engine_step(quiet.engine);
+        int ti = organism_engine_step(touched.engine);
+        CHECK(qi >= 0 && ti >= 0);
+        quiet_sum = (quiet_sum ^ hash_pixels(organism_engine_buffer(quiet.engine, qi),
+                                             TEST_PIXELS)) *
+                    1099511628211ull;
+        touched_sum =
+            (touched_sum ^ hash_pixels(organism_engine_buffer(touched.engine, ti),
+                                       TEST_PIXELS)) *
+            1099511628211ull;
+    }
+
+    /* A tap must be visible even with identical audio and seed. */
+    CHECK(quiet_sum != touched_sum);
+
+    /* The next tap after a release must also be accepted. */
+    organism_engine_set_touch(touched.engine, &none);
+    CHECK(organism_engine_step(touched.engine) >= 0);
+    organism_engine_set_touch(touched.engine, &touch);
+    CHECK(organism_engine_step(touched.engine) >= 0);
+
+    fixture_free(&quiet);
+    fixture_free(&touched);
+}
+
 int main(void)
 {
     test_create_validation();
     test_determinism_and_rotation();
     test_invalid_inputs();
+    test_touch_reaction();
     return test_report("test_organism");
 }

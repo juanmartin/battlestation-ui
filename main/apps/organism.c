@@ -26,6 +26,7 @@ static const char *TAG = "organism";
 #define ORGANISM_TASK_PRIORITY 4
 #define ORGANISM_TASK_STACK 8192
 #define ORGANISM_FRAME_MS 33
+#define ORGANISM_INPUT_PERIOD_MS 16
 #define ORGANISM_LOG_INTERVAL_US 5000000
 #define ORGANISM_TASK_STOP_TIMEOUT_MS 2000
 
@@ -61,7 +62,6 @@ static const char *TAG = "organism";
 #define COLOR_HINT_TEXT 0xFFFFu
 
 _Static_assert(AUDIO_BAND_COUNT == 16u, "organism maps all 16 audio bands");
-_Static_assert(ORGANISM_WIDTH % 2 == 0, "rotated copy handles pixel pairs");
 
 typedef struct {
     int16_t x;
@@ -70,8 +70,8 @@ typedef struct {
 } organism_touch_state_t;
 
 static uint16_t *s_last;
-static lv_obj_t *s_overlay;
 static lv_display_t *s_disp;
+static lv_timer_t *s_input_timer;
 static bool s_dummy_enabled;
 static organism_engine_t *s_engine;
 static TaskHandle_t s_task;
@@ -79,6 +79,7 @@ static SemaphoreHandle_t s_task_exit;
 
 static portMUX_TYPE s_touch_lock = portMUX_INITIALIZER_UNLOCKED;
 static organism_touch_state_t s_touch;
+static bool s_touch_pressed;
 
 static const uint8_t s_home_font[4][HINT_GLYPH_H] = {
     { 0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11 }, /* H */
@@ -121,38 +122,47 @@ static float band_unit(const audio_features_t *features, int first, int last)
     return db_to_unit(sum / (float)(last - first + 1));
 }
 
-static void touch_event_cb(lv_event_t *e)
+static void input_timer_cb(lv_timer_t *timer)
 {
-    lv_event_code_t code = lv_event_get_code(e);
-    lv_indev_t *indev = lv_indev_get_act();
-    bool active = (code == LV_EVENT_PRESSED) || (code == LV_EVENT_PRESSING);
-    if (indev == NULL && active) {
+    (void)timer;
+
+    lv_indev_t *indev = NULL;
+    for (indev = lv_indev_get_next(NULL); indev != NULL;
+         indev = lv_indev_get_next(indev)) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_POINTER) {
+            break;
+        }
+    }
+    if (indev == NULL) {
         return;
     }
 
     lv_point_t point = { 0, 0 };
-    if (indev != NULL) {
-        lv_indev_get_point(indev, &point);
-    }
+    lv_indev_get_point(indev, &point);
+    const bool raw_pressed =
+        lv_indev_get_state(indev) == LV_INDEV_STATE_PRESSED;
+    const bool was_pressed = s_touch_pressed;
+    s_touch_pressed = raw_pressed;
 
-    if (indev != NULL &&
-        point.x > ORGANISM_HOME_HOTSPOT_X &&
+    bool pressed = raw_pressed;
+    if (raw_pressed && point.x > ORGANISM_HOME_HOTSPOT_X &&
         point.y < ORGANISM_HOME_HOTSPOT_Y) {
-        if (code == LV_EVENT_PRESSED) {
+        if (!was_pressed) {
             app_manager_request("launcher");
         }
-        portENTER_CRITICAL(&s_touch_lock);
-        s_touch.active = false;
-        portEXIT_CRITICAL(&s_touch_lock);
-        return;
+        pressed = false;
+    }
+
+    if (pressed && !was_pressed) {
+        ESP_LOGI(TAG, "touch down %d,%d", (int)point.x, (int)point.y);
     }
 
     portENTER_CRITICAL(&s_touch_lock);
-    if (indev != NULL) {
+    if (pressed) {
         s_touch.x = (int16_t)point.x;
         s_touch.y = (int16_t)point.y;
     }
-    s_touch.active = active;
+    s_touch.active = pressed;
     portEXIT_CRITICAL(&s_touch_lock);
 }
 
@@ -331,10 +341,13 @@ static void free_canvas(void)
     }
 }
 
-static void release_ui_refs(void)
+static void release_input_timer(void)
 {
-    /* app_manager deletes the overlay with the rest of the app tree. */
-    s_overlay = NULL;
+    if (s_input_timer != NULL) {
+        lv_timer_delete(s_input_timer);
+        s_input_timer = NULL;
+    }
+    s_touch_pressed = false;
 }
 
 static bool stop_task(void)
@@ -364,7 +377,7 @@ static void show_error(lv_obj_t *parent, const char *text)
 
 static esp_err_t mount_failed(lv_obj_t *parent, const char *text, esp_err_t err)
 {
-    release_ui_refs();
+    release_input_timer();
 
     if (s_dummy_enabled && s_disp != NULL) {
         esp_err_t disable_err = esp_lv_adapter_set_dummy_draw(s_disp, false);
@@ -429,29 +442,22 @@ esp_err_t organism_mount(lv_obj_t *parent)
     }
     s_dummy_enabled = true;
 
-    s_overlay = lv_obj_create(parent);
-    if (s_overlay == NULL) {
-        return mount_failed(parent, "Organism overlay could not start",
-                            ESP_ERR_NO_MEM);
-    }
-    lv_obj_set_pos(s_overlay, 0, 0);
-    lv_obj_set_size(s_overlay, ORGANISM_WIDTH, ORGANISM_HEIGHT);
-    lv_obj_remove_flag(s_overlay, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_flag(s_overlay, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_style_bg_opa(s_overlay, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(s_overlay, 0, 0);
-    lv_obj_set_style_radius(s_overlay, 0, 0);
-    lv_obj_set_style_pad_all(s_overlay, 0, 0);
-    lv_obj_add_event_cb(s_overlay, touch_event_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(s_overlay, touch_event_cb, LV_EVENT_PRESSING, NULL);
-    lv_obj_add_event_cb(s_overlay, touch_event_cb, LV_EVENT_RELEASED, NULL);
-    lv_obj_add_event_cb(s_overlay, touch_event_cb, LV_EVENT_PRESS_LOST, NULL);
-
     portENTER_CRITICAL(&s_touch_lock);
     s_touch.active = false;
     s_touch.x = 0;
     s_touch.y = 0;
     portEXIT_CRITICAL(&s_touch_lock);
+    s_touch_pressed = false;
+
+    /* Poll the indev directly instead of relying on object hit-testing: the
+     * LVGL tree is not rendered in dummy-draw mode and the engine only needs
+     * the raw pressed state and point. This also catches drags. */
+    s_input_timer = lv_timer_create(input_timer_cb, ORGANISM_INPUT_PERIOD_MS,
+                                    NULL);
+    if (s_input_timer == NULL) {
+        return mount_failed(parent, "Organism input could not start",
+                            ESP_ERR_NO_MEM);
+    }
 
     BaseType_t created = xTaskCreatePinnedToCore(engine_task, "organism",
                                                  ORGANISM_TASK_STACK, s_task_exit,
@@ -471,7 +477,7 @@ esp_err_t organism_mount(lv_obj_t *parent)
 
 void organism_unmount(void)
 {
-    release_ui_refs();
+    release_input_timer();
 
     bool stopped = stop_task();
     if (stopped && s_dummy_enabled && s_disp != NULL) {
