@@ -125,7 +125,8 @@ configuration are defined in
   soak; no UI stall; engine builds/tests on macOS without LVGL.
 - **Result:** direct adapter framebuffer path (ADR-0016), 3072 particles,
   **30.2 fps**, step 20.7 ms; 100-switch self-test with 25 organism mounts and
-  zero leaks. 30-minute soak + visual check pending.
+  zero leaks. 10-minute soak: 615.6 s, 29.9–30.2 fps, zero errors/underruns,
+  stable heap/PSRAM. Visual check and full 30-minute soak pending.
 
 ## M9 — Tuner + tone lab
 

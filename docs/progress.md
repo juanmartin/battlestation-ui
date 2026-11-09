@@ -168,9 +168,11 @@ the detailed document instead of duplicating it.
   no watchdog.
 - 100-switch self-test: organism mounted/unmounted 25 times, child 6 → 6,
   PSRAM delta 0.
-- 30-minute organism soak started.
+- 10-minute organism soak: **615.6 s**, 29.9–30.2 fps, step avg 19.6 ms,
+  flush avg 12.6 ms, zero errors/underruns, no watchdog, PSRAM delta 0.
+- Visual check and full 30-minute soak pending.
 
 ## Next
 
-- Finish the M8 soak; visual check; merge/tag M8.
+- Visual check; full 30-minute soak; merge/tag M8.
 - Then M9 — tuner + tone lab.

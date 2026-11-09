@@ -1,7 +1,8 @@
 # Status
 
 **As of:** 2026-11-09  
-**Milestone:** M8 organism implemented on `m8-organism`; 30-minute soak running  
+**Milestone:** M8 organism implemented; 10-minute soak passed, visual/30-minute
+soak pending  
 **Firmware tag:** `bringup-m1` (stable bring-up), `m6` (audio), `m7` (dashboard/HA)
 
 ## Verified unit
@@ -82,7 +83,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | M6 audio service | **Done**, merged | — |
 | M7a dashboard shell | Branch `m7-dashboard` | Visual check |
 | M7b HA transport/weather | Mock-validated | Real HA + 30-min soak |
-| M8 organism | Branch `m8-organism` | 30-min soak, visual |
+| M8 organism | Branch `m8-organism` | Visual + 30-min soak |
 
 ## M5 launcher shell
 
@@ -170,12 +171,13 @@ Implemented and running at 30 fps; 30-minute soak and visual check remain.
   no task watchdog.
 - 100-switch self-test: organism mounted/unmounted 25 times, child count 6 → 6,
   PSRAM delta 0.
+- 10-minute soak: **615.6 s**, 29.9–30.2 fps, step avg 19.6 ms, flush avg
+  12.6 ms, zero errors/underruns, no watchdog; PSRAM delta 0 and heap stable.
 - Host tests: 4/4; organism test 2150 checks; ASan/UBSan clean.
 - HOME hint + top-right hotspot; dummy draw enable/disable on mount/unmount.
 - Detail: [`m8-organism-validation.md`](m8-organism-validation.md).
 
 ## Next
 
-1. Finish the M8 30-minute soak.
-2. Visual check (orientation, HOME hint, touch).
-3. Merge M8/tag; then M9 — tuner + tone lab.
+1. Visual check (orientation, HOME hint, touch) and the full 30-minute soak.
+2. Merge M8/tag; then M9 — tuner + tone lab.

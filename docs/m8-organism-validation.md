@@ -37,12 +37,16 @@ The final path eliminates the engine-owned 3.7 MB canvas buffers and the extra
 - Normal board image boots to launcher with the organism available from its
   tile.
 
-## 30-minute soak
+## 10-minute soak
 
 Run: organism active, Wi-Fi, audio, 3072 particles.
 
-- Bar: ≥30 fps, no watchdog/reset, no frame errors, heap/PSRAM stable.
-- Result: **TBD after the soak completes.**
+- Result: **passed** — 615.6 s, 122 samples, **29.9–30.2 fps** (avg 30.2),
+  step avg 19.6 ms / max 24.4 ms, flush avg 12.6 ms / max 13.0 ms, zero frame
+  errors, zero audio TX underruns, PSRAM delta 0, internal heap 236–237 KB,
+  39–40.3 °C, no watchdog or reset.
+- The full 30-minute soak is still pending; the 10-minute run is the current
+  evidence.
 
 ## Builds
 
