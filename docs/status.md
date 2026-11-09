@@ -1,7 +1,8 @@
 # Status
 
-**As of:** 2026-11-07  
-**Milestone:** M6 audio service complete and merged to `main`; M7 dashboard next  
+**As of:** 2026-11-09  
+**Milestone:** M7 dashboard + HA implemented on `m7-dashboard`; mock-validated,
+visual/real-HA soak pending  
 **Firmware tag:** `bringup-m1` (stable bring-up), `m6` (audio service)
 
 ## Verified unit
@@ -80,6 +81,8 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | HA integration | Not started | M7 |
 | Launcher / app manager | **Done**, merged | Touch and brightness verified 2026-11-07 |
 | M6 audio service | **Done**, merged | — |
+| M7a dashboard shell | Branch `m7-dashboard` | Visual check |
+| M7b HA transport/weather | Mock-validated | Real HA + 30-min soak |
 
 ## M5 launcher shell
 
@@ -136,6 +139,28 @@ Implemented, validated and merged to `main`.
 
 Detail: [`m6-audio-validation.md`](m6-audio-validation.md).
 
+## M7 dashboard + Home Assistant (branch `m7-dashboard`)
+
+Implemented and mock-validated; visual check, real HA and a 30-minute soak
+remain.
+
+- Card grid: clock, weather, status and four light cards.
+- Fullscreen detail view per card; BACK returns; dashboard stays mounted.
+- Four light cards with on/off and brightness; slider sends one command on
+  release, not per drag tick.
+- HA WebSocket state push + REST initial sync/commands; 30 s resync and
+  auto-reconnect; token never logged.
+- Clock via SNTP, Kconfig timezone; “not synced” until a valid time.
+- Old bring-up probe is now the Diagnostics app, opened from the status card.
+- 100-switch self-test: dashboard mounted/unmounted 25 times, child 6 → 6,
+  PSRAM delta 0, no errors/stalls.
+- Mock HA: WS auth/subscribe, four light states, weather, REST on/off commands,
+  WS light/weather pushes; initial WS error/disconnect reconnected.
+- Device smoke: launcher/audio/Wi-Fi pass, zero errors.
+- Detail: [`m7-dashboard-validation.md`](m7-dashboard-validation.md).
+
 ## Next
 
-1. Start **M7 — dashboard cards + Home Assistant**.
+1. Visual check of the dashboard/detail views.
+2. Configure real HA (LAN HTTP/IP) and run the 30-minute soak.
+3. Merge M7 and tag it; then M8 — organism.

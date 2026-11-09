@@ -101,11 +101,17 @@ configuration are defined in
 - Card grid, detail views, clock/SNTP, Wi-Fi/audio status.
 - Four light cards with on/off + brightness controls.
 - HA client stubbed: “not configured/offline” state, no fake data.
+- **Result:** implemented; dashboard mounted/unmounted 25 times in the
+  100-switch self-test with child delta 0 and no errors/stalls; 30 s device
+  smoke passed. Visual check pending.
 
 **M7b — integration**
 - HA WebSocket + REST client, state sync and four light entities.
 - Weather from an HA weather entity.
 - Reconnect after Wi-Fi/HA drop; 30-minute soak.
+- **Result:** WS auth/subscribe, four light states, weather, REST on/off
+  commands and WS pushes validated against a local mock HA. Real HA, visual
+  check and the 30-minute soak remain.
 
 - **Accept:** clock and weather update; four lights reflect HA state and command
   in < 500 ms; state push < 1 s; detail open/close < 100 ms; dashboard ≥ 30 fps;

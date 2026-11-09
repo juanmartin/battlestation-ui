@@ -59,7 +59,7 @@ static esp_err_t launcher_mount(lv_obj_t *parent)
     lv_obj_t *footer = ui_theme_card(parent, 60, 490, 904, 72);
     ui_theme_label(footer, "Tap a tile to open an app.  HOME returns here from anywhere.",
                    &lv_font_montserrat_14, 0x94A3B8, 20, 12);
-    ui_theme_label(footer, "M5 launcher shell  |  4 static apps  |  hardware path unchanged",
+    ui_theme_label(footer, "M5 launcher shell  |  5 static apps  |  hardware path unchanged",
                    &lv_font_montserrat_14, 0x64748B, 20, 40);
 
     return ESP_OK;
