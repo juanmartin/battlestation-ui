@@ -36,7 +36,6 @@ typedef struct {
     int16_t vx;
     int16_t vy;
     uint8_t hue; /* 0..63 palette phase */
-    uint8_t vis; /* 0..255 visibility threshold driven by mid */
 } organism_particle_t;
 
 _Static_assert(sizeof(organism_particle_t) == 16,
@@ -244,7 +243,6 @@ static void init_particles(organism_engine_t *engine)
         p->vx = 0;
         p->vy = 0;
         p->hue = (uint8_t)(rng_next(&engine->rng) & 63u);
-        p->vis = (uint8_t)(rng_next(&engine->rng) >> 24u);
     }
 }
 
@@ -585,14 +583,16 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
     const float level = engine->smooth.level;
 
     int32_t speed_q4 = 8 + (int32_t)(bass * 44.0f + mid * 18.0f + 0.5f);
-    /* Loudness reveals more particles instead of making them brighter. The
-     * square curve keeps quiet passages sparse without emptying the screen. */
-    int vis_limit = 96 + (int)(level * level * 159.0f + 0.5f);
-    if (vis_limit > 255) {
-        vis_limit = 255;
+    /* Loudness brings more of the particle pool into play. The rest of the
+     * pool keeps its position and resumes when the level rises again. */
+    int active_count = engine->particle_count / 4 +
+                       (int)(level * (float)engine->particle_count * 0.75f + 0.5f);
+    if (active_count > engine->particle_count) {
+        active_count = engine->particle_count;
     }
     int hue_shift = (int)(treble * 63.0f + 0.5f) & 63;
     int row = 5; /* fixed brightness; audio changes density, not glare */
+    const bool dense = level > 0.55f;
     bool repel = bass > 0.62f;
 
     int16_t rc = engine->rot_cos[engine->rot_phase];
@@ -637,7 +637,7 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
     const bool burst_active = engine->burst_age > 0;
     const int32_t burst_left = ORGANISM_BURST_FRAMES - engine->burst_age;
 
-    for (int i = 0; i < engine->particle_count; i++) {
+    for (int i = 0; i < active_count; i++) {
         organism_particle_t *p = &engine->particles[i];
 
         int32_t px = p->x >> 4;
@@ -730,7 +730,8 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
         p->x = wrap_position(p->x + p->vx, max_x);
         p->y = wrap_position(p->y + p->vy, max_y);
 
-        if (p->vis <= vis_limit) {
+        /* draw the active particle */
+        {
             int hue = (p->hue + hue_shift) & 63;
             int particle_row = row;
             if (p_touch_dist_sq < engine->touch_radius_sq) {
@@ -743,28 +744,46 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
                 engine->palette[particle_row * ORGANISM_PALETTE_HUES + hue];
             int x = (int)(p->x >> 4);
             int y = (int)(p->y >> 4);
-
-            plot_pixel(engine, dst, x, y, color);
-            plot_pixel(engine, dst, x + 1, y, color);
-            plot_pixel(engine, dst, x, y + 1, color);
-            plot_pixel(engine, dst, x + 1, y + 1, color);
-
-            /* The fingertip core glows with a wider 3x3 dot. */
-            if (p_touch_dist_sq < 56 * 56) {
-                plot_pixel(engine, dst, x - 1, y, color);
-                plot_pixel(engine, dst, x + 2, y, color);
-                plot_pixel(engine, dst, x, y - 1, color);
-                plot_pixel(engine, dst, x, y + 2, color);
-            }
-
-            /* A faint cross halo makes the 2x2 cores read as soft dots. */
             int halo_row = particle_row > 2 ? particle_row - 2 : 1;
             uint16_t halo =
                 engine->palette[halo_row * ORGANISM_PALETTE_HUES + hue];
-            plot_pixel(engine, dst, x - 1, y, halo);
-            plot_pixel(engine, dst, x + 2, y, halo);
-            plot_pixel(engine, dst, x, y - 1, halo);
-            plot_pixel(engine, dst, x, y + 2, halo);
+
+            if (dense) {
+                /* A 3x3 core plus a wider cross makes loud passages read as a
+                 * noticeably fuller field, not just a brighter one. */
+                plot_pixel(engine, dst, x - 1, y - 1, color);
+                plot_pixel(engine, dst, x, y - 1, color);
+                plot_pixel(engine, dst, x + 1, y - 1, color);
+                plot_pixel(engine, dst, x - 1, y, color);
+                plot_pixel(engine, dst, x, y, color);
+                plot_pixel(engine, dst, x + 1, y, color);
+                plot_pixel(engine, dst, x - 1, y + 1, color);
+                plot_pixel(engine, dst, x, y + 1, color);
+                plot_pixel(engine, dst, x + 1, y + 1, color);
+
+                plot_pixel(engine, dst, x - 2, y, halo);
+                plot_pixel(engine, dst, x + 2, y, halo);
+                plot_pixel(engine, dst, x, y - 2, halo);
+                plot_pixel(engine, dst, x, y + 2, halo);
+            } else {
+                plot_pixel(engine, dst, x, y, color);
+                plot_pixel(engine, dst, x + 1, y, color);
+                plot_pixel(engine, dst, x, y + 1, color);
+                plot_pixel(engine, dst, x + 1, y + 1, color);
+
+                /* The fingertip core glows with a wider 3x3 dot. */
+                if (p_touch_dist_sq < 56 * 56) {
+                    plot_pixel(engine, dst, x - 1, y, color);
+                    plot_pixel(engine, dst, x + 2, y, color);
+                    plot_pixel(engine, dst, x, y - 1, color);
+                    plot_pixel(engine, dst, x, y + 2, color);
+                }
+
+                plot_pixel(engine, dst, x - 1, y, halo);
+                plot_pixel(engine, dst, x + 2, y, halo);
+                plot_pixel(engine, dst, x, y - 1, halo);
+                plot_pixel(engine, dst, x, y + 2, halo);
+            }
 
             /* A dim tail pixel helps fast particles read as short segments. */
             if (p->vx > 16 || p->vx < -16 || p->vy > 16 || p->vy < -16) {

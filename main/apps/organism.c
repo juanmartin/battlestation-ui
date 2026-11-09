@@ -21,7 +21,7 @@ static const char *TAG = "organism";
 
 #define ORGANISM_WIDTH 1024
 #define ORGANISM_HEIGHT 600
-#define ORGANISM_PARTICLES 3072
+#define ORGANISM_PARTICLES 4096
 #define ORGANISM_TASK_CORE 1
 #define ORGANISM_TASK_PRIORITY 4
 #define ORGANISM_TASK_STACK 8192
@@ -35,6 +35,8 @@ static const char *TAG = "organism";
 
 #define ORGANISM_DB_MIN (-80.0f)
 #define ORGANISM_DB_MAX (-20.0f)
+#define ORGANISM_LEVEL_DB_MIN (-50.0f)
+#define ORGANISM_LEVEL_DB_MAX (-30.0f)
 
 #if CONFIG_APP_ROTATION_180
 #define ORGANISM_ROTATE_180 true
@@ -120,6 +122,24 @@ static float band_unit(const audio_features_t *features, int first, int last)
         sum += features->band_db[i];
     }
     return db_to_unit(sum / (float)(last - first + 1));
+}
+
+/* Particle density uses a tighter range than the band visualisation: a
+ * shouted word near the board is roughly -30 dBFS, a quiet room -55 dBFS. */
+static float level_to_unit(float db)
+{
+    if (!isfinite(db)) {
+        return 0.0f;
+    }
+    float unit = (db - ORGANISM_LEVEL_DB_MIN) /
+                 (ORGANISM_LEVEL_DB_MAX - ORGANISM_LEVEL_DB_MIN);
+    if (unit <= 0.0f) {
+        return 0.0f;
+    }
+    if (unit >= 1.0f) {
+        return 1.0f;
+    }
+    return unit;
 }
 
 static void input_timer_cb(lv_timer_t *timer)
@@ -228,6 +248,7 @@ static void engine_task(void *arg)
     uint64_t step_sum = 0;
     uint64_t copy_sum = 0;
     uint64_t flush_sum = 0;
+    float last_level = 0.0f;
     int64_t logged_us = esp_timer_get_time();
 
     for (;;) {
@@ -243,9 +264,10 @@ static void engine_task(void *arg)
                 .bass = band_unit(&features, 0, 3),
                 .mid = band_unit(&features, 4, 9),
                 .treble = band_unit(&features, 10, 15),
-                .level = db_to_unit(features.levels.dbfs_avg),
+                .level = level_to_unit(features.levels.dbfs_avg),
             };
             organism_engine_set_audio(s_engine, &audio);
+            last_level = audio.level;
         }
 
         organism_touch_t touch;
@@ -299,8 +321,11 @@ static void engine_task(void *arg)
 
             ESP_LOGI(TAG,
                      "fps=%.1f step_us=%u copy_us=%u flush_us=%u "
-                     "particles=%d frame=%u errors=%u",
+                     "particles=%d level=%.2f active=%d frame=%u errors=%u",
                      fps, step_avg, copy_avg, flush_avg, ORGANISM_PARTICLES,
+                     last_level,
+                     ORGANISM_PARTICLES / 4 +
+                         (int)(last_level * ORGANISM_PARTICLES * 0.75f + 0.5f),
                      (unsigned)frames, (unsigned)interval_errors);
 
             logged_us = now_us;
