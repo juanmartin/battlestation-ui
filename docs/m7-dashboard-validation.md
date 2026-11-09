@@ -1,7 +1,7 @@
-# M7a dashboard validation
+# M7a/M7b dashboard validation
 
 Scope: dashboard card shell, clock/status, four light cards, detail views,
-SNTP and the HA client stub. HA transport and weather data are M7b.
+SNTP, HA WebSocket/REST transport and weather.
 
 ## Implemented
 
@@ -13,23 +13,26 @@ SNTP and the HA client stub. HA transport and weather data are M7b.
   reachable from the status card/detail.
 - `services/time_service.c` — SNTP (pool.ntp.org), Kconfig timezone, waits for
   Wi-Fi connected; reports “not synced” rather than 1970.
-- `services/ha_client.c` — M7a stub:
-  - unconfigured → offline, no fake light/weather data;
-  - configured → connecting, no transport yet;
-  - `set_light` returns invalid-state/not-supported until M7b.
-- Kconfig: timezone, HA URL/token, four light entity IDs, weather entity.
-- Dashboard light controls keep a local preview while HA is offline and show
-  that state explicitly.
+- `services/ha_client.c` — WebSocket state push + REST initial sync/commands:
+  - four light entities and one weather entity from Kconfig;
+  - auth token never logged; HTTP_CLIENT debug logging pinned to INFO;
+  - command queue (depth 8, non-blocking) and a worker task;
+  - 30 s REST resync, WS auto-reconnect;
+  - slider commands are sent once on release, not per drag tick.
+- Kconfig: timezone, HA URL/token, four light entity IDs, weather entity,
+  optional HA command self-test.
 
 ## Build
 
 | Build | Size | Free |
 | --- | ---: | ---: |
 | rev1.3 | 1,319,120 B | 84% |
-| rev1.3 + Wi-Fi | 1,408,752 B | 83% |
-| rev1.3 + Wi-Fi + switch self-test | 1,409,824 B | 83% |
+| rev1.3 + Wi-Fi | 1,409,648 B | 83% |
+| rev1.3 + Wi-Fi + HA test | 1,698,672 B | 80% |
+| configured HA (dummy) | 1,628,016 B | 81% |
 
 Zero compiler warnings. `./tools/ci.sh --quick` passes (host tests 3/3).
+`esp_websocket_client` 1.8.0 is pinned in `dependencies.lock`.
 
 ## Hardware
 
@@ -57,16 +60,60 @@ errors/panic: 0/no
 result: PASS
 ```
 
+### Mock Home Assistant
+
+A local REST + WebSocket mock (`aiohttp`, port 8123) was used with four lights
+and one weather entity.
+
+Observed on the board:
+
+```text
+ha_client: WebSocket connected
+ha_client: light 0: on 70%
+ha_client: WebSocket authenticated
+ha_client: light 1: off 0%
+ha_client: light 2: off 0%
+ha_client: light 3: off 0%
+ha_client: weather: sunny 22.5 C
+ha_selftest: light 0 -> on 40%
+ha_client: light 0: on 40%
+ha_client: light 0: on 70%      (mock WebSocket push)
+ha_selftest: light 0 -> off
+ha_client: light 0: off 70%
+```
+
+The mock server also logged:
+
+```text
+CMD turn_on light.desk {'entity_id': 'light.desk', 'brightness_pct': 40}
+CMD turn_off light.desk {'entity_id': 'light.desk'}
+WS auth_ok
+WS subscribed
+```
+
+This verifies:
+
+- WebSocket auth + `subscribe_events`;
+- initial REST state sync for lights and weather;
+- REST light commands (on/off + brightness);
+- WebSocket `state_changed` push for lights and weather;
+- reconnect after an initial WS error/disconnect.
+
 ## Pending
 
 - Visual check of the card layout, detail views and light controls.
-- M7b: REST/WebSocket HA transport, four real light states/commands, weather.
-- M7b: pending/optimistic command state and command coalescing (sliders
-  currently enqueue on every change).
-- Long soak with live HA.
+- Real HA instance and token; the mock used `light.desk`/`weather.home`.
+- 30-minute live-HA/Wi-Fi soak; only short mock runs were done.
+- TLS (`https://`/`wss://`) and mDNS are not enabled; use a LAN HTTP URL/IP in
+  M7b.
 
-## Known limitation
+## Known limitations
 
-`dashboard.c` still uses the BSP display lock/size macros directly, like the old
-probe. Moving that behind `display_service` is a portability cleanup, not an M7
-blocker.
+- `dashboard.c` still uses the BSP display lock/size macros directly, like the
+  old probe. Moving that behind `display_service` is a portability cleanup, not
+  an M7 blocker.
+- HA WebSocket frames are reassembled in a 4 KB buffer; unusually large
+  weather/attribute payloads can be dropped. REST resync every 30 s recovers.
+- REST requests use a 4 s timeout and one worker; a slow HA can delay queued
+  commands. Commands are best-effort and corrected by the next state push/sync.
+- The HA token is a compile-time Kconfig value until M10 moves it to NVS.

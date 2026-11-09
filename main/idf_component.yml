@@ -23,3 +23,7 @@ dependencies:
   # 2.x/3.x C6 image (or vice versa) without updating both sides deliberately.
   espressif/esp_hosted: "1.4.*"
   espressif/esp_wifi_remote: "==1.2.5"
+
+  # Home Assistant transport. M7b uses ws:// for state push and plain HTTP for
+  # REST; TLS is intentionally out of scope for the LAN milestone.
+  espressif/esp_websocket_client: "==1.8.0"

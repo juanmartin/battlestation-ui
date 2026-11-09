@@ -12,7 +12,7 @@ The only in-tree exception is `components/esp_lvgl_adapter/`; see
 
 ## Resolved build dependencies
 
-From `dependencies.lock` (2026-11-06). Update this table when the lock changes.
+From `dependencies.lock` (2026-11-09). Update this table when the lock changes.
 
 | Component | Version | Role | Source |
 | --- | --- | --- | --- |
@@ -23,6 +23,7 @@ From `dependencies.lock` (2026-11-06). Update this table when the lock changes.
 | `espressif/esp_codec_dev` | 1.5.11 | ES7210/ES8311 drivers | [Component](https://components.espressif.com/components/espressif/esp_codec_dev) |
 | `espressif/esp_hosted` | 1.4.7 | C6 SDIO/RPC transport | <https://github.com/espressif/esp-hosted-mcu> |
 | `espressif/esp_wifi_remote` | 1.2.5 | `esp_wifi_*` API over ESP-Hosted | Component registry |
+| `espressif/esp_websocket_client` | 1.8.0 | Home Assistant WebSocket state push | [Component](https://components.espressif.com/components/espressif/esp_websocket_client) |
 | `espressif/esp_lcd_ek79007` | 2.0.2~1 | EK79007 DSI panel driver | Component registry |
 | `espressif/esp_lcd_touch_gt911` | 1.2.1 | GT911 touch driver | Component registry |
 

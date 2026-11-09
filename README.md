@@ -13,8 +13,8 @@ lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M7a dashboard shell implemented on `m7-dashboard`; M7b Home
-Assistant transport next.
+**Milestone:** M7 dashboard + HA implemented on `m7-dashboard`;
+mock-validated, visual/real-HA soak pending.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -37,6 +37,9 @@ Assistant transport next.
 - M7a dashboard shell: clock/SNTP, weather placeholder, Wi-Fi/audio status and
   four light cards with detail views; HA stub shows offline honestly. Dashboard
   mount/unmount passed 25 cycles in the 100-switch self-test.
+- M7b HA client: WebSocket auth/subscribe, REST initial sync/commands, four
+  lights and weather; validated against a local mock HA, including WS pushes
+  and an initial reconnect. Real HA and 30-minute soak pending.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 

@@ -17,6 +17,9 @@
 #if CONFIG_APP_AUDIO_TEST_TONE
 #include "audio_service_selftest.h"
 #endif
+#if CONFIG_APP_HA_TEST
+#include "ha_client_selftest.h"
+#endif
 
 static const char *TAG = "battlestation";
 
@@ -105,6 +108,13 @@ void app_main(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "HA client start failed: %s", esp_err_to_name(err));
     }
+
+#if CONFIG_APP_HA_TEST
+    err = ha_client_selftest_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "HA self-test start failed: %s", esp_err_to_name(err));
+    }
+#endif
 
     err = diag_probe_start(disp);
     if (err != ESP_OK) {

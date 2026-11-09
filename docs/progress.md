@@ -139,20 +139,25 @@ the detailed document instead of duplicating it.
 - Hosted alternatives and the rationale are documented in
   [`ci.md`](ci.md).
 
-## 2026-11-09 — M7a dashboard shell
+## 2026-11-09 — M7 dashboard + HA
 
 - Replaced the probe-as-dashboard with a card grid: clock, weather, status and
   four light cards; fullscreen detail views with BACK.
-- Added `time_service` (SNTP) and an HA client stub; unconfigured HA shows an
-  honest offline state and a clearly labelled local preview for light controls.
+- Added `time_service` (SNTP) and a real HA client: WebSocket state push + REST
+  initial sync/commands, command queue, 30 s resync and auto-reconnect.
+- Slider commands are coalesced to one send on release; light cards show
+  pending/syncing/offline states honestly.
 - Moved the old probe to the Diagnostics app, reachable from the status card.
-- Added Kconfig for timezone, HA URL/token, four light entities and weather
-  entity.
+- Added Kconfig for timezone, HA URL/token, four light entities, weather entity
+  and an optional HA command self-test.
 - 100-switch self-test: dashboard mounted 25 times, child 6 → 6, PSRAM delta 0,
   no errors/stalls. 30 s device smoke passed with Wi-Fi.
-- Pending: visual layout/detail check; M7b HA transport and weather.
+- Mock HA: WS auth/subscribe, four light states, weather, REST on/off commands
+  and WS light/weather pushes; an initial WS error/disconnect reconnected.
+- Pending: visual layout/detail check, real HA instance and the 30-minute soak.
 
 ## Next
 
 - Visual check of the dashboard/detail views.
-- M7b — HA REST/WebSocket, four real lights, weather.
+- Configure real HA (LAN HTTP/IP) and run the 30-minute soak.
+- Merge M7 and tag it; then M8 — organism.

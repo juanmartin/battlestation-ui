@@ -100,9 +100,12 @@ menu "Battlestation dashboard"
         string "Home Assistant base URL (empty disables HA)"
         default ""
         help
-            For example http://homeassistant.local:8123. Both the URL and the
+            For example http://192.168.1.10:8123. Both the URL and the
             long-lived access token must be set for the HA client to run. The
-            token is never written to logs.
+            token is never written to logs. M7b supports plain http:// LAN
+            URLs only; https:// is rejected because TLS is not enabled yet.
+            Use an IP address or a name your DHCP DNS server resolves; mDNS
+            .local names are not resolved in M7b.
 
     config APP_HA_TOKEN
         string "Home Assistant long-lived access token"
@@ -141,5 +144,12 @@ menu "Battlestation dashboard"
         help
             Home Assistant weather entity shown by the weather card. Leave
             empty to show the not-configured placeholder.
+
+    config APP_HA_TEST
+        bool "Run the HA light command self-test at boot"
+        default n
+        help
+            After 8 s, queues light 0 on at 40% and then off. Use with a mock or
+            real HA instance; normal images must leave this disabled.
 
 endmenu

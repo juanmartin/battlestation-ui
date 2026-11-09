@@ -29,7 +29,9 @@ static const char *TAG = "dashboard";
 #define COLOR_RED 0xF87171
 
 #define TIMER_PERIOD_MS 100
-/* Clock, Wi-Fi, weather and HA state change slowly; audio stays at 10 Hz. */
+/* Audio stays at 10 Hz. HA pushes should reach the labels in well under 1 s;
+ * clock and Wi-Fi do not need to run that often. */
+#define HA_TICK_DIVIDER 5u
 #define SLOW_TICK_DIVIDER 10u
 
 enum {
@@ -68,6 +70,7 @@ typedef struct {
 } clock_detail_ui_t;
 
 typedef struct {
+    lv_obj_t *value;
     lv_obj_t *entity;
     lv_obj_t *condition;
     lv_obj_t *status;
@@ -104,6 +107,9 @@ typedef struct {
     bool on;
     int brightness;
     bool remote_valid;
+    bool remote_on;
+    bool pending;
+    uint32_t pending_until_ms;
     bool applying;
 } light_ui_t;
 
@@ -220,7 +226,10 @@ static lv_obj_t *make_slider(lv_obj_t *parent, int x, int y, int w, int h,
     lv_obj_set_style_radius(slider, 6, LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(slider, lv_color_hex(COLOR_TEXT), LV_PART_KNOB);
     if (cb != NULL) {
+        /* Dragging only updates the local preview; the command is sent once on
+         * release so a slider drag cannot flood the HA command queue. */
         lv_obj_add_event_cb(slider, cb, LV_EVENT_VALUE_CHANGED, user_data);
+        lv_obj_add_event_cb(slider, cb, LV_EVENT_RELEASED, user_data);
     }
     return slider;
 }
@@ -356,11 +365,27 @@ static void update_weather(void)
 {
     const char *entity;
     const bool configured = weather_configured(&entity);
-    const char *condition = configured ? "No data yet" : "Not configured";
+    ha_weather_t weather = {0};
+    const bool available = configured && ha_client_get_weather(&weather);
     const char *status = ha_state_text();
+    char value[16];
+
+    if (available) {
+        snprintf(value, sizeof(value), "%.0f°C", weather.temperature_c);
+    } else {
+        snprintf(value, sizeof(value), "--");
+    }
+    const char *condition;
+    if (available) {
+        condition = weather.condition[0] ? weather.condition : "unknown";
+    } else if (configured) {
+        condition = "Waiting for HA";
+    } else {
+        condition = "Not configured";
+    }
 
     if (s_ui.weather.value != NULL) {
-        lv_label_set_text(s_ui.weather.value, "--");
+        lv_label_set_text(s_ui.weather.value, value);
     }
     if (s_ui.weather.condition != NULL) {
         lv_label_set_text(s_ui.weather.condition, condition);
@@ -372,6 +397,9 @@ static void update_weather(void)
         lv_label_set_text(s_ui.weather.status, status);
     }
 
+    if (s_ui.weather_detail.value != NULL) {
+        lv_label_set_text(s_ui.weather_detail.value, value);
+    }
     if (s_ui.weather_detail.entity != NULL) {
         lv_label_set_text_fmt(s_ui.weather_detail.entity, "Entity: %s", entity);
     }
@@ -496,19 +524,30 @@ static const char *light_state_text(const light_ui_t *light)
     if (!light_entity_configured(light) || !ha_client_configured()) {
         return "NOT CONFIGURED";
     }
-    if (light->remote_valid || ha_client_state() == HA_CONNECTED) {
-        return light->on ? "ON" : "OFF";
+
+    const ha_state_t state = ha_client_state();
+    if (state == HA_OFFLINE) {
+        return "OFFLINE";
+    }
+    if (light->pending) {
+        return "PENDING";
+    }
+    if (light->remote_valid) {
+        return light->remote_on ? "ON" : "OFF";
+    }
+    if (state == HA_CONNECTED) {
+        return "SYNCING";
     }
     return "CONNECTING";
 }
 
-static uint32_t light_state_color(const light_ui_t *light)
+static uint32_t light_state_color(const char *state_text)
 {
-    if (!light_entity_configured(light) || !ha_client_configured()) {
-        return COLOR_AMBER;
+    if (strcmp(state_text, "ON") == 0) {
+        return COLOR_GREEN;
     }
-    if (light->remote_valid || ha_client_state() == HA_CONNECTED) {
-        return light->on ? COLOR_GREEN : COLOR_MUTED;
+    if (strcmp(state_text, "OFF") == 0) {
+        return COLOR_MUTED;
     }
     return COLOR_AMBER;
 }
@@ -521,8 +560,16 @@ static const char *light_hint_text(const light_ui_t *light)
     if (!light_entity_configured(light)) {
         return "entity not configured";
     }
-    if (ha_client_state() == HA_CONNECTED) {
-        return "HA connected";
+
+    const ha_state_t state = ha_client_state();
+    if (state == HA_OFFLINE) {
+        return "HA offline - local preview";
+    }
+    if (light->pending) {
+        return "sent - waiting for HA";
+    }
+    if (state == HA_CONNECTED) {
+        return light->remote_valid ? "HA connected" : "HA syncing";
     }
     return "HA connecting - local preview";
 }
@@ -530,7 +577,7 @@ static const char *light_hint_text(const light_ui_t *light)
 static void light_refresh(light_ui_t *light)
 {
     const char *state_text = light_state_text(light);
-    const uint32_t state_color = light_state_color(light);
+    const uint32_t state_color = light_state_color(state_text);
     const char *hint = light_hint_text(light);
 
     if (light->state != NULL) {
@@ -579,20 +626,43 @@ static void light_refresh(light_ui_t *light)
 static void light_pull(light_ui_t *light)
 {
     ha_light_state_t state;
+    const uint32_t now = lv_tick_get();
 
     if (ha_client_get_light(light->index, &state) && state.available) {
         light->remote_valid = true;
+        light->remote_on = state.on;
+
+        if (light->pending) {
+            const bool matches = (state.on == light->on) &&
+                                 (!state.on || state.brightness == light->brightness);
+            const bool expired = (int32_t)(now - light->pending_until_ms) >= 0;
+            if (matches || expired) {
+                light->pending = false;
+            }
+        }
+
         const bool dragging =
             (light->slider != NULL &&
              lv_obj_has_state(light->slider, LV_STATE_PRESSED)) ||
             (light->detail_slider != NULL &&
              lv_obj_has_state(light->detail_slider, LV_STATE_PRESSED));
-        if (!dragging) {
+        if (!light->pending && !dragging) {
             light->on = state.on;
             light->brightness = state.brightness;
         }
     } else {
         light->remote_valid = false;
+        if (light->pending && (int32_t)(now - light->pending_until_ms) >= 0) {
+            light->pending = false;
+        }
+    }
+}
+
+static void light_command_queued(light_ui_t *light, esp_err_t err)
+{
+    light->pending = (err == ESP_OK);
+    if (light->pending) {
+        light->pending_until_ms = lv_tick_get() + 5000;
     }
 }
 
@@ -604,11 +674,9 @@ static void light_power_cb(lv_event_t *e)
     }
 
     light->on = !light->on;
-    /* The M7a stub returns immediately. A real network client must enqueue the
-     * command here instead of blocking the LVGL task. */
-    const esp_err_t err = ha_client_set_light(light->index, light->on,
-                                              light->brightness);
-    light->remote_valid = (err == ESP_OK);
+    /* Queued by the HA client; this call never performs HTTP on the LVGL task. */
+    light_command_queued(light, ha_client_set_light(light->index, light->on,
+                                                     light->brightness));
     light_refresh(light);
 }
 
@@ -621,10 +689,14 @@ static void light_slider_cb(lv_event_t *e)
 
     lv_obj_t *slider = lv_event_get_target(e);
     light->brightness = (int)lv_slider_get_value(slider);
-    /* Non-blocking stub today; future network sends must be queued. */
-    const esp_err_t err = ha_client_set_light(light->index, light->on,
-                                              light->brightness);
-    light->remote_valid = (err == ESP_OK);
+
+    if (lv_event_get_code(e) == LV_EVENT_RELEASED) {
+        light_command_queued(light, ha_client_set_light(light->index, light->on,
+                                                         light->brightness));
+    } else {
+        /* VALUE_CHANGED is preview only: no command per drag tick. */
+        light->pending = false;
+    }
     light_refresh(light);
 }
 
@@ -681,7 +753,8 @@ static void build_weather_detail(lv_obj_t *detail)
     lv_obj_t *card = ui_theme_card(detail, 112, 110, 800, 390);
     ui_theme_label(card, "WEATHER  /  HOME ASSISTANT", &lv_font_montserrat_20,
                    COLOR_ACCENT, 40, 20);
-    ui_theme_label(card, "--", &lv_font_montserrat_48, COLOR_TEXT, 40, 60);
+    s_ui.weather_detail.value = ui_theme_label(card, "--", &lv_font_montserrat_48,
+                                               COLOR_TEXT, 40, 60);
     s_ui.weather_detail.condition = ui_theme_label(card, "Not configured",
                                                    &lv_font_montserrat_28,
                                                    COLOR_TEXT, 40, 150);
@@ -1029,12 +1102,14 @@ static void dashboard_timer_cb(lv_timer_t *timer)
     const uint32_t tick = ++s_ticks;
     update_status_audio();
 
+    if ((tick % HA_TICK_DIVIDER) == 0) {
+        update_weather();
+        update_lights();
+    }
     if ((tick % SLOW_TICK_DIVIDER) == 0) {
         update_header();
         update_clock();
-        update_weather();
         update_status_network();
-        update_lights();
     }
 }
 

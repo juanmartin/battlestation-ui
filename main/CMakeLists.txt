@@ -24,9 +24,14 @@ if(CONFIG_APP_AUDIO_TEST_TONE)
     list(APPEND main_srcs "services/audio_service_selftest.c")
 endif()
 
+if(CONFIG_APP_HA_TEST)
+    list(APPEND main_srcs "services/ha_client_selftest.c")
+endif()
+
 idf_component_register(
     SRCS ${main_srcs}
     INCLUDE_DIRS "." "apps" "services" "engine"
     REQUIRES esp32_p4_wifi6_touch_lcd_7b lvgl__lvgl
     PRIV_REQUIRES esp_wifi esp_event esp_netif lwip nvs_flash esp_driver_tsens
+                 esp_http_client json esp_websocket_client
 )
