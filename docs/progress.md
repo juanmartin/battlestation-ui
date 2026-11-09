@@ -172,7 +172,27 @@ the detailed document instead of duplicating it.
   flush avg 12.6 ms, zero errors/underruns, no watchdog, PSRAM delta 0.
 - Visual check and full 30-minute soak pending.
 
+## 2026-11-09 — M8.1 organism touch + loudness density
+
+- Fixed organism touch: dummy-draw mode has no rendered object tree, so the
+  overlay events were unreliable. A 16 ms LVGL timer now polls the pointer
+  indev (`lv_indev_get_state`/`lv_indev_get_point`) and publishes state to the
+  engine task.
+- Added a soft fingertip glow, expanding ripple and gentle swirl; reduced the
+  burst impulse after the first feel check.
+- Brightness is fixed. Loudness now controls the active particle pool
+  (~1,024 quiet → 4,096 loud) and loud frames use 3×3 cores, so sound visibly
+  fills the scene.
+- Full-density hardware: **30.2 fps**, step ~22.6 ms, flush ~9.5 ms, zero
+  errors/watchdog. Startup/remount windows briefly show ~25.5 fps while LVGL
+  rebinds the panel.
+- Merged PR #5 and tagged **`m8.1`**; normal launcher + Wi-Fi build restored.
+- Host tests 4/4; zero compiler warnings; firmware 1,430,976 B (83% free).
+- Full 30-minute soak at 4,096 particles still pending.
+
 ## Next
 
-- Visual check; full 30-minute soak; merge/tag M8.
-- Then M9 — tuner + tone lab.
+- M9 — tuner + tone lab (pure-C engines + host tests first, UI second).
+- M10 settings/provisioning, then M11 stabilization.
+- Deferred: full 30-minute organism soak at 4,096 particles.
+- Post-M11 ideas: [`backlog.md`](backlog.md).
