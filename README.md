@@ -77,6 +77,8 @@ the full sequence, revision handling and troubleshooting.
 make ci          # whitespace + host tests + rev1.3 firmware build
 make ci-quick    # whitespace + host tests only
 make asan        # host tests with ASan/UBSan
+make device PORT=/dev/cu.usbmodemXXXX       # flash + 60 s device smoke
+make device-soak PORT=/dev/cu.usbmodemXXXX  # flash + 615 s soak
 tools/install_git_hooks.sh   # optional pre-commit/pre-push hooks
 ```
 

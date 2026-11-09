@@ -15,6 +15,9 @@ FIRMWARE_ONLY=0
 ASAN=0
 WIFI=0
 QUICK=0
+DEVICE=0
+PORT="${PORT:-}"
+SOAK_SECONDS=60
 
 usage() {
     cat <<'EOF'
@@ -26,10 +29,14 @@ Usage: tools/ci.sh [options]
   --firmware-only  firmware build only
   --asan           also run host tests with ASan/UBSan
   --wifi           also build the Wi-Fi variant with placeholder credentials
+  --device         also flash and run a device smoke/soak test
+  --port PORT      serial port for --device (or set PORT)
+  --soak-seconds N device capture length (default 60)
   -h, --help       show this help
 
 Environment:
   IDF_PATH         ESP-IDF tree (default: $HOME/esp/esp-idf-v5.5.5)
+  PORT             serial port for --device
 EOF
 }
 
@@ -40,6 +47,9 @@ while [ $# -gt 0 ]; do
         --firmware-only) FIRMWARE_ONLY=1 ;;
         --asan) ASAN=1 ;;
         --wifi) WIFI=1 ;;
+        --device) DEVICE=1 ;;
+        --port) PORT="$2"; shift ;;
+        --soak-seconds) SOAK_SECONDS="$2"; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
     esac
@@ -51,6 +61,14 @@ if [ "$QUICK" -eq 1 ]; then
 fi
 if [ "$HOST_ONLY" -eq 1 ] && [ "$FIRMWARE_ONLY" -eq 1 ]; then
     echo "error: --host-only and --firmware-only are mutually exclusive" >&2
+    exit 2
+fi
+if [ "$DEVICE" -eq 1 ] && [ "$HOST_ONLY" -eq 1 ]; then
+    echo "error: --device cannot be combined with --host-only/--quick" >&2
+    exit 2
+fi
+if ! [[ "$SOAK_SECONDS" =~ ^[0-9]+$ ]] || [ "$SOAK_SECONDS" -lt 5 ]; then
+    echo "error: --soak-seconds must be an integer >= 5" >&2
     exit 2
 fi
 
@@ -125,6 +143,50 @@ build_firmware() {
     grep -E 'binary size|Project build complete' "$logfile" | tail -3 || true
 }
 
+device_ci() {
+    ensure_idf
+
+    local port="${PORT:-}"
+    if [ -z "$port" ]; then
+        local candidates=(/dev/cu.usbmodem*)
+        if [ ${#candidates[@]} -eq 1 ] && [ -e "${candidates[0]}" ]; then
+            port="${candidates[0]}"
+        else
+            echo "error: pass --port or PORT; serial candidates: ${candidates[*]:-none}" >&2
+            return 1
+        fi
+    fi
+
+    local defaults="sdkconfig.defaults;sdkconfig.rev1_3.defaults"
+    local -a expect=()
+    if [ -f "$ROOT/sdkconfig.wifi.local" ]; then
+        defaults="$defaults;sdkconfig.wifi.local"
+        expect=(--expect-wifi)
+    fi
+
+    rm -f "$ROOT/sdkconfig.ci-device"
+    build_firmware "device" \
+        "$ROOT/sdkconfig.ci-device" \
+        "$defaults" \
+        "$ROOT/build-ci-device"
+
+    log "flash device: $port"
+    if ! idf.py -B "$ROOT/build-ci-device" \
+        -D SDKCONFIG="$ROOT/sdkconfig.ci-device" \
+        -p "$port" flash > "$ROOT/build-ci-device-flash.log" 2>&1; then
+        echo "flash failed; last 30 lines:" >&2
+        tail -30 "$ROOT/build-ci-device-flash.log" >&2
+        return 1
+    fi
+
+    log "device test: ${SOAK_SECONDS}s"
+    python3 "$ROOT/tools/device_test.py" \
+        --port "$port" \
+        --seconds "$SOAK_SECONDS" \
+        --log "$ROOT/build-ci-device-serial.log" \
+        "${expect[@]}"
+}
+
 check_whitespace
 
 if [ "$FIRMWARE_ONLY" -eq 0 ]; then
@@ -149,6 +211,10 @@ if [ "$HOST_ONLY" -eq 0 ]; then
             "sdkconfig.defaults;sdkconfig.rev1_3.defaults;sdkconfig.wifi.local.example" \
             "$ROOT/build-ci-wifi"
     fi
+fi
+
+if [ "$DEVICE" -eq 1 ]; then
+    device_ci
 fi
 
 log "CI passed"

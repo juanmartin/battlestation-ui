@@ -1,4 +1,4 @@
-.PHONY: ci ci-quick host firmware asan clean
+.PHONY: ci ci-quick host firmware asan device device-soak clean
 
 ci:
 	./tools/ci.sh
@@ -15,6 +15,12 @@ firmware:
 asan:
 	./tools/ci.sh --host-only --asan
 
+device:
+	./tools/ci.sh --device --soak-seconds 60
+
+device-soak:
+	./tools/ci.sh --device --soak-seconds 615
+
 clean:
-	rm -rf build-host-ci build-host-asan build-ci build-ci-wifi sdkconfig.ci sdkconfig.ci-wifi
-	rm -f build-ci.log build-ci-wifi.log
+	rm -rf build-host-ci build-host-asan build-ci build-ci-wifi build-ci-device sdkconfig.ci sdkconfig.ci-wifi sdkconfig.ci-device
+	rm -f build-ci.log build-ci-wifi.log build-ci-device.log build-ci-device-flash.log build-ci-device-serial.log

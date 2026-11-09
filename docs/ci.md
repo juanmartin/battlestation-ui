@@ -13,6 +13,8 @@ make ci-quick    # whitespace + host tests only
 make host        # host tests only
 make firmware    # rev1.3 firmware build only
 make asan        # host tests under ASan/UBSan
+make device      # build + flash + 60 s device smoke test
+make device-soak # build + flash + 615 s device soak
 ./tools/ci.sh --wifi   # also build the Wi-Fi variant
 make clean       # remove local CI build dirs/configs
 ```
@@ -27,8 +29,34 @@ The script lives at [`../tools/ci.sh`](../tools/ci.sh). It:
    credentials (`--wifi`).
 5. Optionally runs the host suite with ASan/UBSan (`--asan`).
 
-It does **not** flash or touch the board. Hardware validation remains a separate
-gate.
+It does **not** flash or touch the board in the default gate. Hardware validation
+is opt-in.
+
+## Device runner
+
+The board is usually connected to the same machine, so the local runner can also
+flash and smoke-test it:
+
+```bash
+make device PORT=/dev/cu.usbmodemXXXX
+make device-soak PORT=/dev/cu.usbmodemXXXX
+```
+
+`make device` builds a device image, flashes it over the CH343P UART, resets the
+board, captures 60 s of serial output and checks:
+
+- launcher mounted
+- ES7210 capture started and `audio_analysis` levels present
+- `diag_probe` heartbeat advancing with `stall=0`
+- no `UI STALL`, `PANIC`, `Guru Meditation` or `E (` lines
+- Wi-Fi connected when `sdkconfig.wifi.local` exists (otherwise skipped)
+
+`make device-soak` does the same for 615 s. The device image uses
+`sdkconfig.wifi.local` if present; otherwise it builds without Wi-Fi. This stage
+is **not** part of `pre-push` because it needs the board and resets it.
+
+One board, one runner: do not run device CI while using the board for something
+else.
 
 ## Git hooks
 
