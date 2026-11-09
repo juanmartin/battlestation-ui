@@ -29,12 +29,12 @@ Decision: [ADR-0001](decisions/0001-single-firmware-static-apps.md).
 
 ## Target layout
 
-> **Current implementation:** M5 launcher, M6 audio service and M7 dashboard +
-> HA: `main/services/audio_service.*`, `audio_analysis.*`, `time_service.*`,
-> `ha_client.*` (WebSocket + REST), `main/engine/*` and
-> `main/apps/dashboard.c`. The Tuner app arrives at M9. Evidence:
-> [`m6-audio-validation.md`](m6-audio-validation.md),
-> [`m7-dashboard-validation.md`](m7-dashboard-validation.md).
+> **Current implementation:** M5 launcher, M6 audio service, M7 dashboard + HA
+> and M8 organism: `main/services/audio_service.*`, `audio_analysis.*`,
+> `time_service.*`, `ha_client.*`, `main/engine/*` and the apps. The Tuner app
+> arrives at M9. Evidence: [`m6-audio-validation.md`](m6-audio-validation.md),
+> [`m7-dashboard-validation.md`](m7-dashboard-validation.md),
+> [`m8-organism-validation.md`](m8-organism-validation.md).
 
 ```text
 battlestation-ui/
@@ -202,7 +202,7 @@ rule so the metronome and tone generator cannot clip or fight over the speaker.
 | `lvgl` (adapter) | 1 | 6 | 8 KB | LVGL timer/render/flush, UI timers |
 | `app_logic` | 1 | 5 | 6 KB | Active app state, input events, switching |
 | `tone` | 1 | 5 | 6 KB | Synthesize tone/metronome into the output queue |
-| `organism` | 1 | 4 | 8 KB | Render into back canvas, yield every frame |
+| `organism` | 1 | 4 | 8 KB | Render into a dummy-draw buffer, yield every frame |
 | `net` | 0 | 3 | 8 KB | Wi-Fi events, HA REST/WS, reconnect |
 | `services` | 0 | 4 | 4 KB | Settings, brightness, housekeeping |
 
@@ -228,7 +228,7 @@ excluded or feed the watchdog deliberately.
 | Wi-Fi/netif | `net_service` | One event loop; app commands via queue |
 | HA connection | `ha_client` | One WebSocket + one HTTP client; JSON on its task |
 | NVS | `settings_service` | Small key/value only |
-| Canvas buffers | `organism` | Engine writes back buffer; UI reads front after swap |
+| Canvas buffers | adapter pipeline | Organism writes a free dummy-draw buffer; no LVGL image |
 | LVGL objects | active app | Created/destroyed under the display lock |
 
 Memory rules:
@@ -263,6 +263,21 @@ typedef struct {
   one frame.
 - Background audio/network continue while an app is unmounted; the app re-reads
   the latest snapshot on mount.
+
+## Organism rendering
+
+The organism is a full-screen, LVGL-independent renderer using the adapter's
+direct framebuffer path (ADR-0016):
+
+- Pure-C engine: 96×96 vector field, 3072 compact particles, cheap RGB565 trail
+  fade, audio/touch inputs, precomputed palette.
+- The engine task renders directly into
+  `esp_lv_adapter_dummy_draw_get_free_buf()` and flushes it; LVGL is bypassed
+  while the organism is active.
+- `rotate_180` is applied in the particle plot, so the copy is a plain write;
+  the panel's HOME hint is drawn by the engine and its top-right hotspot returns
+  to the launcher.
+- PPA is not used; the engine and pipeline copy fit the 30 fps budget.
 
 ## Home Assistant
 

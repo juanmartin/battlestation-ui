@@ -33,8 +33,16 @@ add_executable(test_mixer
 target_include_directories(test_mixer PRIVATE "${ENGINE_DIR}")
 target_link_libraries(test_mixer PRIVATE m)
 
+add_executable(test_organism
+    test_organism.c
+    "${ENGINE_DIR}/organism_engine.c"
+)
+target_include_directories(test_organism PRIVATE "${ENGINE_DIR}")
+target_link_libraries(test_organism PRIVATE m)
+
 enable_testing()
 
 add_test(NAME fft_spectrum COMMAND test_fft)
 add_test(NAME features_levels COMMAND test_features)
 add_test(NAME mixer COMMAND test_mixer)
+add_test(NAME organism COMMAND test_organism)

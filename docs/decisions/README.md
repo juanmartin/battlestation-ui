@@ -23,6 +23,7 @@ a decision changes; do not silently rewrite history.
 | [0013](0013-audio-output-tuner.md) | Audio output ownership and tuner signal chain | Accepted |
 | [0014](0014-audio-analysis-defaults.md) | 16 half-octave bands, 20 ms FFT hop, YIN tuner | Accepted |
 | [0015](0015-dashboard-data-sources.md) | Dashboard data sources and HA configuration | Accepted |
+| [0016](0016-organism-direct-framebuffer.md) | Organism uses the adapter's direct framebuffer path | Accepted |
 
 ## Format
 

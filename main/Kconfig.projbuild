@@ -69,6 +69,12 @@ menu "Battlestation bring-up"
             bool "180 degrees (factory orientation)"
     endchoice
 
+    config APP_BOOT_APP
+        string "App to mount at boot (launcher/dashboard/organism/diagnostics)"
+        default "launcher"
+        help
+            Development/kiosk override. Unknown values fall back to the launcher.
+
     config APP_SWITCH_SELFTEST
         bool "Run the M5 100-switch launcher self-test at boot"
         default n

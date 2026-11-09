@@ -156,8 +156,21 @@ the detailed document instead of duplicating it.
   and WS light/weather pushes; an initial WS error/disconnect reconnected.
 - Pending: visual layout/detail check, real HA instance and the 30-minute soak.
 
+## 2026-11-09 — M8 organism
+
+- Implemented the pure-C organism engine: 96×96 vector field, 3072 particles,
+  trails, palette, audio/touch inputs; host test 2150 checks + ASan.
+- First LVGL image integration reached only ~6 fps; switched to the adapter's
+  direct dummy-draw framebuffer path (ADR-0016).
+- Engine pre-rotates for the panel, renders directly into the adapter free
+  buffer, draws a HOME hint and flushes; no extra full-frame copy.
+- Hardware: **30.2 fps**, step 20.7 ms, flush 11.4 ms, zero errors/underruns,
+  no watchdog.
+- 100-switch self-test: organism mounted/unmounted 25 times, child 6 → 6,
+  PSRAM delta 0.
+- 30-minute organism soak started.
+
 ## Next
 
-- Visual check of the dashboard/detail views.
-- Configure real HA (LAN HTTP/IP) and run the 30-minute soak.
-- Merge M7 and tag it; then M8 — organism.
+- Finish the M8 soak; visual check; merge/tag M8.
+- Then M9 — tuner + tone lab.

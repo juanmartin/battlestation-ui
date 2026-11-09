@@ -1,8 +1,8 @@
-# Host-side DSP tests
+# Host-side engine tests
 
-These tests build and run the pure-C M6 audio analysis code from `main/engine`
-on the development host. They do not require ESP-IDF, FreeRTOS, LVGL or audio
-hardware.
+These tests build and run the pure-C M6 audio analysis and M8 organism engine
+code from `main/engine` on the development host. They do not require ESP-IDF,
+FreeRTOS, LVGL or audio hardware.
 
 ## Build and run
 
@@ -20,6 +20,7 @@ To run a single binary directly:
 ./build-host/test_fft
 ./build-host/test_features
 ./build-host/test_mixer
+./build-host/test_organism
 ```
 
 `build-host/` is ignored by the repository's `build*/` rule.
@@ -44,6 +45,10 @@ ctest --test-dir build-host-asan --output-on-failure
   decay, 1 s sliding Leq, and the 160-frame block / 1024-sample FFT counters.
 - `test_mixer` — silence, mono duplication, linear gain, int16 saturation,
   and the -9/-15 dB ducking gain levels applied by the service table.
+- `test_organism` — 512-particle 256x150 RGB565 frames: buffer rotation,
+  non-black output, persistent trails, deterministic output checksums for a
+  fixed seed/input sequence, and sanitized NaN/Inf audio plus out-of-range
+  touch coordinates.
 
 ## Note on peak hold
 
