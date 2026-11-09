@@ -7,8 +7,10 @@ Target: rev1.3, 1024×600, 3072 particles, direct adapter framebuffer path.
 - Pure C, no LVGL/ESP-IDF includes.
 - 96×96 vector field, 16-byte particles, cheap RGB565 trail fade, precomputed
   8×64 palette.
-- Audio mapping: bass → speed, mid → visible fraction, treble → hue, level →
-  brightness. Touch is an attractor, repelled on strong bass.
+- Audio mapping: bass → speed, mid → flow, treble → hue, level → active
+  particle density. A quiet room runs ~1,024 particles; loud sound brings the
+  full 4,096-particle pool into play, and loud frames draw 3×3 cores instead of
+  2×2. Brightness is fixed. Touch is a gentle swirl, repelled on strong bass.
 - Host test: 300 frames, determinism, rotation, non-black/changing buffers,
   NaN/Inf inputs, invalid configs; 2150 checks.
 - Full-res state: ~85 KB PSRAM for 4096 particles (3072 used), no per-frame
@@ -48,19 +50,45 @@ Run: organism active, Wi-Fi, audio, 3072 particles.
 - The full 30-minute soak is still pending; the 10-minute run is the current
   evidence.
 
+## Touch reaction
+
+The direct framebuffer path bypasses LVGL rendering, so the organism no longer
+relies on overlay object events. A 16 ms LVGL timer polls the pointer indev
+(`lv_indev_get_state()` / `lv_indev_get_point()`) and publishes the point and
+pressed state to the engine task. Pressing triggers:
+
+- a soft palette glow under the fingertip,
+- an expanding double ripple/shockwave that fades over ~0.9 s,
+- a gentle vortex/swirl of nearby particles,
+- local brightening and wider particle cores near the finger.
+
+The logical top-right hotspot still returns to the launcher. Bass still repels
+the touch swirl on strong beats. The ripple/burst impulse was reduced after the
+first feel check: it now gives a soft shove and a stronger swirl instead of
+scattering the field and leaving a particle hole. Loudness now controls the
+active particle pool (1,024 quiet → 4,096 loud) and loud frames use 3×3 cores,
+so the scene visibly fills with sound instead of only changing brightness.
+
+Hardware check: real points were logged across the panel (e.g. `555,331`,
+`85,372`, `880,391`, `192,52`) while the renderer held **30.2 fps** (step
+20.3–21.7 ms, flush 10.5–11.8 ms), with zero errors/watchdog. With the final
+density map, loud frames run the full 4,096 particles at **30.2 fps** (step
+~22.6 ms, flush ~9.5 ms); startup/remount windows briefly show ~25.5 fps while
+LVGL rebinds the panel.
+
 ## Builds
 
 | Build | Size | Free |
 | --- | ---: | ---: |
 | rev1.3, no Wi-Fi | 1,336,336 B | 84% |
-| rev1.3 + Wi-Fi, boot organism | 1,426,176 B | 83% |
+| rev1.3 + Wi-Fi, boot organism | 1,430,976 B | 83% |
 | rev1.3 + switch self-test | 1,337,744 B | 84% |
 
 Zero compiler warnings. Host tests 4/4; ASan/UBSan clean.
 
 ## Pending / known limits
 
-- Visual check: orientation, HOME hint/hotspot, touch response.
+- Visual check: orientation, HOME hint/hotspot, and touch feel.
 - Full 30-minute soak.
 - Dummy draw is global display state; enable/disable is handled on mount/unmount.
 - Only 0°/180° rotation is supported by the pre-rotation path.

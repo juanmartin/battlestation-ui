@@ -49,7 +49,9 @@ void organism_engine_destroy(organism_engine_t *engine);
 /* Clamped to 0..1; NaN/Inf is treated as 0. Copies the latest input. */
 void organism_engine_set_audio(organism_engine_t *engine, const organism_audio_t *audio);
 
-/* An active point attracts nearby particles; a strong bass beat repels them. */
+/* An active point attracts and swirls nearby particles; a strong bass beat
+ * repels them. Each inactive -> active transition also starts a visible
+ * ripple/burst at the touch point. */
 void organism_engine_set_touch(organism_engine_t *engine, const organism_touch_t *touch);
 
 /* Render one frame into the next buffer. Returns the new front index 0..2.
