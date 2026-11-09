@@ -7,8 +7,9 @@ Target: rev1.3, 1024×600, 3072 particles, direct adapter framebuffer path.
 - Pure C, no LVGL/ESP-IDF includes.
 - 96×96 vector field, 16-byte particles, cheap RGB565 trail fade, precomputed
   8×64 palette.
-- Audio mapping: bass → speed, mid → visible fraction, treble → hue, level →
-  brightness. Touch is an attractor, repelled on strong bass.
+- Audio mapping: bass → speed, mid → flow, treble → hue, level → visible
+  particle density (brightness is fixed). Touch is a gentle swirl, repelled on
+  strong bass.
 - Host test: 300 frames, determinism, rotation, non-black/changing buffers,
   NaN/Inf inputs, invalid configs; 2150 checks.
 - Full-res state: ~85 KB PSRAM for 4096 particles (3072 used), no per-frame
@@ -57,11 +58,13 @@ pressed state to the engine task. Pressing triggers:
 
 - a soft palette glow under the fingertip,
 - an expanding double ripple/shockwave that fades over ~0.9 s,
-- a stronger inward swirl/attraction of nearby particles,
+- a gentle vortex/swirl of nearby particles,
 - local brightening and wider particle cores near the finger.
 
-The logical top-right hotspot still returns to the launcher. Audio mapping and
-bass repulsion are unchanged.
+The logical top-right hotspot still returns to the launcher. Bass still repels
+the touch swirl on strong beats. The ripple/burst impulse was reduced after the
+first feel check: it now gives a soft shove and a stronger swirl instead of
+scattering the field and leaving a particle hole.
 
 Hardware check: real points were logged across the panel (e.g. `555,331`,
 `85,372`, `880,391`, `192,52`) while the renderer held **30.2 fps** (step

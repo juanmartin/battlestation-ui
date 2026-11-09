@@ -11,7 +11,7 @@
 #define ORGANISM_PALETTE_HUES 64
 #define ORGANISM_PALETTE_ROWS 8
 #define ORGANISM_BURST_FRAMES 26
-#define ORGANISM_BURST_RADIUS 320
+#define ORGANISM_BURST_RADIUS 280
 #define ORGANISM_BURST_RADIUS_SQ \
     (ORGANISM_BURST_RADIUS * ORGANISM_BURST_RADIUS)
 #define ORGANISM_TWO_PI 6.283185307179586476925286766559
@@ -584,18 +584,15 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
     const float treble = engine->smooth.treble;
     const float level = engine->smooth.level;
 
-    int32_t speed_q4 = 8 + (int32_t)(bass * 56.0f + 0.5f);
-    int vis_limit = 128 + (int)(mid * 127.0f + 0.5f);
+    int32_t speed_q4 = 8 + (int32_t)(bass * 44.0f + mid * 18.0f + 0.5f);
+    /* Loudness reveals more particles instead of making them brighter. The
+     * square curve keeps quiet passages sparse without emptying the screen. */
+    int vis_limit = 96 + (int)(level * level * 159.0f + 0.5f);
     if (vis_limit > 255) {
         vis_limit = 255;
     }
     int hue_shift = (int)(treble * 63.0f + 0.5f) & 63;
-    int row = 1 + (int)(level * 6.0f + 0.5f);
-    if (row < 1) {
-        row = 1;
-    } else if (row > ORGANISM_PALETTE_ROWS - 1) {
-        row = ORGANISM_PALETTE_ROWS - 1;
-    }
+    int row = 5; /* fixed brightness; audio changes density, not glare */
     bool repel = bass > 0.62f;
 
     int16_t rc = engine->rot_cos[engine->rot_phase];
@@ -673,10 +670,10 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
                 int32_t falloff_q8 =
                     (engine->touch_radius_sq - dist_sq) * 256 /
                     engine->touch_radius_sq;
-                int32_t inward_x = dx * falloff_q8 / 192;
-                int32_t inward_y = dy * falloff_q8 / 192;
-                int32_t swirl_x = -dy * falloff_q8 / 320;
-                int32_t swirl_y = dx * falloff_q8 / 320;
+                int32_t inward_x = dx * falloff_q8 / 384;
+                int32_t inward_y = dy * falloff_q8 / 384;
+                int32_t swirl_x = -dy * falloff_q8 / 256;
+                int32_t swirl_y = dx * falloff_q8 / 256;
                 if (repel) {
                     push_x = -inward_x;
                     push_y = -inward_y;
@@ -695,23 +692,23 @@ static void render_frame(organism_engine_t *engine, uint16_t *dst, const uint16_
                 int32_t falloff_q8 =
                     (ORGANISM_BURST_RADIUS_SQ - dist_sq) * 256 /
                     ORGANISM_BURST_RADIUS_SQ;
-                int32_t impulse = burst_left * 9;
-                push_x += dx * impulse * falloff_q8 / 32768;
-                push_y += dy * impulse * falloff_q8 / 32768;
+                int32_t impulse = burst_left * 5;
+                push_x += dx * impulse * falloff_q8 / 98304;
+                push_y += dy * impulse * falloff_q8 / 98304;
                 push_x += -dy * impulse * falloff_q8 / 65536;
                 push_y += dx * impulse * falloff_q8 / 65536;
             }
         }
 
-        if (push_x > 480) {
-            push_x = 480;
-        } else if (push_x < -480) {
-            push_x = -480;
+        if (push_x > 240) {
+            push_x = 240;
+        } else if (push_x < -240) {
+            push_x = -240;
         }
-        if (push_y > 480) {
-            push_y = 480;
-        } else if (push_y < -480) {
-            push_y = -480;
+        if (push_y > 240) {
+            push_y = 240;
+        } else if (push_y < -240) {
+            push_y = -240;
         }
 
         if (tvx > 512) {
