@@ -190,9 +190,29 @@ the detailed document instead of duplicating it.
 - Host tests 4/4; zero compiler warnings; firmware 1,430,976 B (83% free).
 - Full 30-minute soak at 4,096 particles still pending.
 
+## 2026-11-10 — M9 tuner + tone lab
+
+- Added pure-C YIN tuner, phase-continuous tone generator and Q32.32 metronome;
+  host tests 7/7 (tuner ±0.01 cents synthetic, tone 0.1%, metronome
+  sub-sample). ASan/UBSan clean.
+- Added `tuner_service`: capture reader + tuner task, tone/metronome generator
+  task and two playback lanes. Tone/metronome lanes are only active when
+  enabled so an idle silent lane cannot duck the other.
+- Added the Tuner app: pitch/cents/needle/waveform, tone controls, metronome
+  controls/visual beat, header output-volume slider.
+- Fixed two hardware issues found in the feel pass: metronome was silent because
+  the service zeroed the engine gain fields; sweep now ends in silence instead
+  of parking at the final frequency.
+- Added a -50 dBFS RMS gate so room rumble does not invent low notes.
+- Hardware: 440 Hz tone read back acoustically as 440.1 Hz / +0.2 cents; tone
+  and metronome audible; volume works; zero TX underruns; no watchdog/reset.
+- Lifecycle: 5 apps × 25 cycles = 125 switches, tuner mounted/unmounted 25
+  times; child delta 0, PSRAM delta 0, no errors.
+- Pending: merge/tag, 30-minute soak, real low-E guitar check.
+
 ## Next
 
-- M9 — tuner + tone lab (pure-C engines + host tests first, UI second).
+- Merge/tag M9; restore the normal launcher build.
 - M10 settings/provisioning, then M11 stabilization.
-- Deferred: full 30-minute organism soak at 4,096 particles.
+- Deferred: full 30-minute organism soak at 4,096 particles and the M9 soak.
 - Post-M11 ideas: [`backlog.md`](backlog.md).

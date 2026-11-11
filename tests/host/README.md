@@ -1,8 +1,8 @@
 # Host-side engine tests
 
-These tests build and run the pure-C M6 audio analysis and M8 organism engine
-code from `main/engine` on the development host. They do not require ESP-IDF,
-FreeRTOS, LVGL or audio hardware.
+These tests build and run the pure-C M6 audio analysis, M8 organism and M9
+tuner/tone/metronome engine code from `main/engine` on the development host.
+They do not require ESP-IDF, FreeRTOS, LVGL or audio hardware.
 
 ## Build and run
 
@@ -21,6 +21,9 @@ To run a single binary directly:
 ./build-host/test_features
 ./build-host/test_mixer
 ./build-host/test_organism
+./build-host/test_tuner
+./build-host/test_tone
+./build-host/test_metronome
 ```
 
 `build-host/` is ignored by the repository's `build*/` rule.
@@ -49,6 +52,16 @@ ctest --test-dir build-host-asan --output-on-failure
   non-black output, persistent trails, deterministic output checksums for a
   fixed seed/input sequence, and sanitized NaN/Inf audio plus out-of-range
   touch coordinates.
+- `test_tuner` — YIN pitch detection at 16 kHz and 48 kHz for the seven
+  standard-tuning notes, low-E/A4 cent accuracy, silence and white-noise
+  rejection, A4 reference changes, saw/square fundamental detection, and
+  arbitrary process-block sizes.
+- `test_tone` — sine/square/triangle/saw frequency and amplitude accuracy,
+  bit-exact block-size independence, click-free frequency/amplitude changes,
+  waveform crossfades, and linear/log sweeps.
+- `test_metronome` — 60 s beat timing and sub-sample jitter at 48 kHz for
+  2/4, 3/4, 4/4 and 6/8, accent patterns and audio levels, BPM-change
+  continuity, visual counters, and mono/stereo equivalence.
 
 ## Note on peak hold
 

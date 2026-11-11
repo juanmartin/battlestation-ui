@@ -29,6 +29,7 @@ static const app_desc_t *const s_apps[] = {
     &launcher_app,
     &dashboard_app,
     &organism_app,
+    &tuner_app,
     &settings_app,
     &diagnostics_app,
 };
@@ -146,7 +147,8 @@ static void selftest_task(void *arg)
     const size_t baseline = app_manager_child_count();
     const unsigned int0 = (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     const unsigned psram0 = (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-    const char *cycle[] = {"dashboard", "organism", "settings", "launcher"};
+    const char *cycle[] = {"dashboard", "organism", "tuner", "settings",
+                           "launcher"};
     int switches = 0;
 
     ESP_LOGI(TAG, "selftest start: children=%u int=%u psram=%u",
@@ -235,7 +237,7 @@ esp_err_t app_manager_start(lv_display_t *disp)
 
 #if CONFIG_APP_SWITCH_SELFTEST
     if (err == ESP_OK) {
-        xTaskCreate(selftest_task, "m5_selftest", 4096, NULL, 2, NULL);
+        xTaskCreate(selftest_task, "m5_selftest", 4096, NULL, 6, NULL);
     }
 #endif
 

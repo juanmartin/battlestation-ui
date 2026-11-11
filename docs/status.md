@@ -1,8 +1,8 @@
 # Status
 
-**As of:** 2026-11-09  
-**Milestone:** M8.1 organism merged (touch + loudness density); M9 tuner + tone
-engine in progress  
+**As of:** 2026-11-10  
+**Milestone:** M9 tuner + tone lab implemented on `m9-tuner`; merge and full
+30-minute soak pending  
 **Firmware tag:** `bringup-m1` (bring-up), `m6` (audio), `m7` (dashboard/HA),
 `m8` (organism), `m8.1` (touch + density)
 
@@ -85,6 +85,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | M7a dashboard shell | Branch `m7-dashboard` | Visual check |
 | M7b HA transport/weather | Mock-validated | Real HA + 30-min soak |
 | M8 organism | **Merged** `m8.1` | Full 30-min soak at final density |
+| M9 tuner + tone lab | Branch `m9-tuner` | Merge, 30-min soak, low-E guitar |
 
 ## M5 launcher shell
 
@@ -183,9 +184,28 @@ density remains.
   reaction.
 - Detail: [`m8-organism-validation.md`](m8-organism-validation.md).
 
+## M9 tuner + tone lab (branch `m9-tuner`)
+
+Implemented and hardware-tested; merge and the 30-minute soak remain.
+
+- Pure-C engines: YIN tuner (2048/800 at 16 kHz), phase-continuous tone
+  generator (sine/square/triangle/saw, linear/log sweep), Q32.32 metronome.
+- Host tests 7/7: tuner ±0.01 cents on synthetic A4/E2; tone frequency within
+  0.1%; metronome sub-sample. ASan/UBSan clean.
+- Tuner app: TUNER/TONE/METRONOME tabs, cents needle, input waveform, tone
+  waveform/frequency/amplitude/sweep, BPM/meter/accent/click, visual beat.
+- Header output-volume slider controls ES8311; tone and metronome both follow.
+- One-shot sweep goes silent when the ramp ends.
+- Hardware: acoustic loopback of the 440 Hz tone read 440.1 Hz / +0.2 cents;
+  humming/guitar tracks; tone and metronome audible; zero TX underruns; no
+  watchdog/reset. A -50 dBFS RMS gate rejects room rumble.
+- Lifecycle: 5 apps × 25 cycles = 125 switches with the tuner started/stopped
+  25 times; child delta 0, PSRAM delta 0, no errors.
+- Detail: [`m9-tuner-validation.md`](m9-tuner-validation.md).
+
 ## Next
 
-1. Finish M9 (tuner + tone lab) and run its host/firmware gates.
-2. M10 settings/provisioning; M11 stabilization.
-3. Deferred: full 30-minute organism soak at 4,096 particles.
+1. Merge M9, tag it, restore the normal launcher build.
+2. Deferred: 30-minute tuner + tone + metronome soak; real low-E guitar check.
+3. M10 settings/provisioning; M11 stabilization.
 4. Post-M11 product ideas are captured in [`backlog.md`](backlog.md).

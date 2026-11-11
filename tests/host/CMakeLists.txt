@@ -40,9 +40,33 @@ add_executable(test_organism
 target_include_directories(test_organism PRIVATE "${ENGINE_DIR}")
 target_link_libraries(test_organism PRIVATE m)
 
+add_executable(test_tuner
+    test_tuner.c
+    "${ENGINE_DIR}/tuner_engine.c"
+)
+target_include_directories(test_tuner PRIVATE "${ENGINE_DIR}")
+target_link_libraries(test_tuner PRIVATE m)
+
+add_executable(test_tone
+    test_tone.c
+    "${ENGINE_DIR}/tone_engine.c"
+)
+target_include_directories(test_tone PRIVATE "${ENGINE_DIR}")
+target_link_libraries(test_tone PRIVATE m)
+
+add_executable(test_metronome
+    test_metronome.c
+    "${ENGINE_DIR}/metronome.c"
+)
+target_include_directories(test_metronome PRIVATE "${ENGINE_DIR}")
+target_link_libraries(test_metronome PRIVATE m)
+
 enable_testing()
 
 add_test(NAME fft_spectrum COMMAND test_fft)
 add_test(NAME features_levels COMMAND test_features)
 add_test(NAME mixer COMMAND test_mixer)
 add_test(NAME organism COMMAND test_organism)
+add_test(NAME tuner COMMAND test_tuner)
+add_test(NAME tone COMMAND test_tone)
+add_test(NAME metronome COMMAND test_metronome)

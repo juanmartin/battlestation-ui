@@ -63,4 +63,5 @@ esp_err_t audio_service_playback_set_active(audio_playback_source_t src, bool ac
 esp_err_t audio_service_playback_flush(audio_playback_source_t src);
 esp_err_t audio_service_playback_close(audio_playback_source_t src);
 esp_err_t audio_service_set_output_volume(int percent);
+esp_err_t audio_service_get_output_volume(int *percent);
 esp_err_t audio_service_set_output_muted(bool muted);
