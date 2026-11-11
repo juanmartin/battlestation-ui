@@ -170,3 +170,17 @@ One app with three related tools; all audio goes through `audio_service`
   error injection (AP off, HA off, invalid token, unplug speaker).
 - **Accept:** no reboot/leak; heap/PSRAM high-water documented; graceful
   degradation; final memory/performance report.
+
+## Post-M11 backlog
+
+Unscheduled product ideas captured for after the current plan. Details and open
+questions: [`backlog.md`](backlog.md).
+
+- English / Castellano localization.
+- Clock arrows on the right, UTC-3 default and/or a timezone picker.
+- Weather beyond the Home Assistant weather entity (direct provider option).
+- Dashboard as home; MENU button for the app grid/current launcher home.
+- Automatic screen sleep, wake on touch.
+- Lighting UX: color picker, auto-fitting device layout, groups, dashboard
+  favorites, and a full device view with all controls.
+

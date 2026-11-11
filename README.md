@@ -109,6 +109,7 @@ and hosted alternatives.
 | [`docs/stability.md`](docs/stability.md) | Display-freeze root cause, isolation matrix, chosen pipeline |
 | [`docs/architecture.md`](docs/architecture.md) | Target application architecture and portability boundary |
 | [`docs/roadmap.md`](docs/roadmap.md) | M0–M11 with status and acceptance criteria |
+| [`docs/backlog.md`](docs/backlog.md) | Unscheduled post-M11 product ideas and open questions |
 | [`docs/decisions/`](docs/decisions/) | Architecture decision records (ADRs) |
 | [`docs/external/upstream.md`](docs/external/upstream.md) | Dependency provenance and update policy |
 | [`docs/research/`](docs/research/) | Frozen 2026-11-06 research handoff (source material) |

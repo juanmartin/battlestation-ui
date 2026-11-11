@@ -1,9 +1,10 @@
 # Status
 
 **As of:** 2026-11-09  
-**Milestone:** M8 organism implemented; 10-minute soak passed, visual/30-minute
-soak pending  
-**Firmware tag:** `bringup-m1` (stable bring-up), `m6` (audio), `m7` (dashboard/HA)
+**Milestone:** M8.1 organism merged (touch + loudness density); M9 tuner + tone
+engine in progress  
+**Firmware tag:** `bringup-m1` (bring-up), `m6` (audio), `m7` (dashboard/HA),
+`m8` (organism), `m8.1` (touch + density)
 
 ## Verified unit
 
@@ -83,7 +84,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | M6 audio service | **Done**, merged | — |
 | M7a dashboard shell | Branch `m7-dashboard` | Visual check |
 | M7b HA transport/weather | Mock-validated | Real HA + 30-min soak |
-| M8 organism | Branch `m8-organism` | Visual + 30-min soak |
+| M8 organism | **Merged** `m8.1` | Full 30-min soak at final density |
 
 ## M5 launcher shell
 
@@ -160,24 +161,31 @@ remain.
 - Device smoke: launcher/audio/Wi-Fi pass, zero errors.
 - Detail: [`m7-dashboard-validation.md`](m7-dashboard-validation.md).
 
-## M8 organism (branch `m8-organism`)
+## M8.1 organism (merged)
 
-Implemented and running at 30 fps; 30-minute soak and visual check remain.
+Merged to `main` and tagged `m8.1`; the full 30-minute soak at the final
+density remains.
 
-- Pure-C engine: 96×96 field, 3072 particles, trails, audio/touch inputs.
+- Pure-C engine: 96×96 field, up to 4,096 particles, trails, audio/touch inputs.
 - Direct adapter framebuffer path (dummy draw): no LVGL image, no extra
   full-frame copy; engine pre-rotated for the panel.
-- Hardware: **30.2 fps**, step ~20.7 ms, flush ~11.4 ms, zero errors/underruns,
-  no task watchdog.
-- 100-switch self-test: organism mounted/unmounted 25 times, child count 6 → 6,
-  PSRAM delta 0.
-- 10-minute soak: **615.6 s**, 29.9–30.2 fps, step avg 19.6 ms, flush avg
-  12.6 ms, zero errors/underruns, no watchdog; PSRAM delta 0 and heap stable.
-- Host tests: 4/4; organism test 2150 checks; ASan/UBSan clean.
-- HOME hint + top-right hotspot; dummy draw enable/disable on mount/unmount.
+- Touch is read by polling the LVGL pointer indev in a 16 ms timer; press
+  starts a soft glow, expanding ripple and gentle particle swirl. HOME
+  hint/hotspot unchanged.
+- Loudness now controls the active particle pool (~1,024 quiet → 4,096 loud);
+  loud frames draw 3×3 cores. Brightness is fixed.
+- Hardware at full density: **30.2 fps**, step ~22.6 ms, flush ~9.5 ms, zero
+  errors/underruns, no task watchdog. Startup/remount windows briefly show
+  ~25.5 fps while LVGL rebinds the panel.
+- 100-switch self-test from the initial M8 pass: organism mounted/unmounted 25
+  times, child count 6 → 6, PSRAM delta 0.
+- Host tests: 4/4; organism test covers determinism, invalid input and touch
+  reaction.
 - Detail: [`m8-organism-validation.md`](m8-organism-validation.md).
 
 ## Next
 
-1. Visual check (orientation, HOME hint, touch) and the full 30-minute soak.
-2. Merge M8/tag; then M9 — tuner + tone lab.
+1. Finish M9 (tuner + tone lab) and run its host/firmware gates.
+2. M10 settings/provisioning; M11 stabilization.
+3. Deferred: full 30-minute organism soak at 4,096 particles.
+4. Post-M11 product ideas are captured in [`backlog.md`](backlog.md).
