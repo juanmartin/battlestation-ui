@@ -148,6 +148,13 @@ One app with three related tools; all audio goes through `audio_service`
 - **Accept:** tuner within ±1 cent at A4 and ±3 cents at low E with a clean
   input; tone frequency within 0.1%; metronome jitter < 5 ms; no clicks or
   dropouts while capture/analysis run; 30-minute soak.
+- **Result:** pure-C YIN tuner, phase-continuous tone generator and Q32.32
+  metronome; host tests 7/7 (tuner ±0.01 cents on synthetic A4/E2, tone 0.1%,
+  metronome sub-sample). Tuner app with three tabs, cents needle, waveform,
+  volume, one-shot sweep. Hardware: A4 acoustic loopback 440.1 Hz / +0.2 cents;
+  tone and metronome audible, zero TX underruns. 30-minute soak and real
+  guitar low-E check remain. Detail:
+  [`m9-tuner-validation.md`](m9-tuner-validation.md).
 
 ## M10 — Settings and provisioning
 
