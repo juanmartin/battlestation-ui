@@ -412,6 +412,7 @@ void tuner_service_stop(void)
         return;
     }
 
+    ESP_LOGI(TAG, "stop");
     audio_service_set_output_muted(true);
     s_running = false;
     if (s_tuner_task != NULL) {

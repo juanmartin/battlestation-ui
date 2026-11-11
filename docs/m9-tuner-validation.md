@@ -71,6 +71,10 @@ ASan/UBSan run: all 7 tests pass.
   beat/meter/accent work.
 - Volume slider affects both tone and metronome.
 - Audio TX underruns: **0**; no watchdog/reset during the test runs.
+- Lifecycle self-test (5 apps × 25 cycles = **125 switches**, tuner started and
+  stopped 25 times): child count 7 → 7 (delta 0), PSRAM delta 0, internal heap
+  delta -5.9 KB, no errors/stalls. Tuner mount/unmount adds ~0.1–0.3 s of LVGL
+  render time per switch in the stress loop.
 - Note: the metronome initially appeared silent because the service zeroed the
   engine's gain fields; explicit defaults fixed it.
 
@@ -89,7 +93,6 @@ Zero compiler warnings; host tests 7/7.
 - Real guitar low-E accuracy on hardware (host ±0.0001 cents; voice tests are
   not a substitute).
 - Metronome jitter on hardware (host scheduling is sub-sample).
-- 100-switch lifecycle with the tuner service starting/stopping each time.
 - Volume is cached by `audio_service` at runtime; NVS persistence arrives in M10.
 - 48 kHz tuner path is supported but costs ~5× the 16 kHz YIN work; the app uses
   16 kHz.

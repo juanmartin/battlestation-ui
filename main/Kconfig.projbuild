@@ -78,12 +78,13 @@ menu "Battlestation bring-up"
             to the launcher.
 
     config APP_SWITCH_SELFTEST
-        bool "Run the M5 100-switch launcher self-test at boot"
+        bool "Run the app-switch lifecycle self-test at boot"
         default n
         help
-            Cycles launcher -> dashboard -> organism -> settings 25 times
-            (100 switches), logging the LVGL child count and heap after each
-            cycle. Use a dedicated test image; leave disabled for normal use.
+            Cycles launcher -> dashboard -> organism -> tuner -> settings 25
+            times (125 switches), logging the LVGL child count and heap after
+            each cycle. Use a dedicated test image; leave disabled for normal
+            use.
 
     config APP_AUDIO_TEST_TONE
         bool "Play a 1 kHz test tone 2 s after boot"

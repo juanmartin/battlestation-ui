@@ -152,7 +152,8 @@ One app with three related tools; all audio goes through `audio_service`
   metronome; host tests 7/7 (tuner ±0.01 cents on synthetic A4/E2, tone 0.1%,
   metronome sub-sample). Tuner app with three tabs, cents needle, waveform,
   volume, one-shot sweep. Hardware: A4 acoustic loopback 440.1 Hz / +0.2 cents;
-  tone and metronome audible, zero TX underruns. 30-minute soak and real
+  tone and metronome audible, zero TX underruns. 125-switch lifecycle passed
+  (tuner mounted/unmounted 25×, zero child/PSRAM delta). 30-minute soak and real
   guitar low-E check remain. Detail:
   [`m9-tuner-validation.md`](m9-tuner-validation.md).
 
