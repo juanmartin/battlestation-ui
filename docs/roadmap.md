@@ -14,8 +14,8 @@ validation gates.
 | M6 — Shared audio service + analysis | **Done** 2026-11-06 | Analysis < 5 ms/frame |
 | M7 — Dashboard + Home Assistant | **In progress** | 4 lights, clock, weather, detail views |
 | M8 — Generative organism | **In progress** | ≥ 30 fps, no UI stall |
-| M9 — Tuner + tone lab | Planned | Tuning accuracy, clean output |
-| M10 — Settings and provisioning | Planned | Persistence, bad input handling |
+| M9 — Tuner + tone lab | **Done** `m9` | 30-min soak, low-E guitar |
+| M10 — Settings and provisioning | Next | Persistence, bad input handling |
 | M11 — Stabilization | Planned | 24 h soak, graceful degradation |
 
 ## M0 — Environment and board identity
@@ -153,8 +153,8 @@ One app with three related tools; all audio goes through `audio_service`
   metronome sub-sample). Tuner app with three tabs, cents needle, waveform,
   volume, one-shot sweep. Hardware: A4 acoustic loopback 440.1 Hz / +0.2 cents;
   tone and metronome audible, zero TX underruns. 125-switch lifecycle passed
-  (tuner mounted/unmounted 25×, zero child/PSRAM delta). 30-minute soak and real
-  guitar low-E check remain. Detail:
+  (tuner mounted/unmounted 25×, zero child/PSRAM delta). Merged and tagged
+  **`m9`**; 30-minute soak and real guitar low-E check remain. Detail:
   [`m9-tuner-validation.md`](m9-tuner-validation.md).
 
 ## M10 — Settings and provisioning

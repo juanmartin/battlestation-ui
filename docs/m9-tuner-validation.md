@@ -82,8 +82,8 @@ ASan/UBSan run: all 7 tests pass.
 
 | Build | Size | Free |
 | --- | ---: | ---: |
-| rev1.3, no Wi-Fi | 1,376,496 B | 84% |
-| rev1.3 + Wi-Fi, boot tuner | 1,467,184 B | 83% |
+| rev1.3, no Wi-Fi | 1,377,632 B | 84% |
+| rev1.3 + Wi-Fi, boot tuner | 1,467,328 B | 83% |
 
 Zero compiler warnings; host tests 7/7.
 

@@ -208,7 +208,9 @@ the detailed document instead of duplicating it.
   and metronome audible; volume works; zero TX underruns; no watchdog/reset.
 - Lifecycle: 5 apps × 25 cycles = 125 switches, tuner mounted/unmounted 25
   times; child delta 0, PSRAM delta 0, no errors.
-- Pending: merge/tag, 30-minute soak, real low-E guitar check.
+- Merged PR #6 and tagged **`m9`**; normal launcher + Wi-Fi build flashed and
+  device smoke passed.
+- Pending: 30-minute soak, real low-E guitar check.
 
 ## Next
 

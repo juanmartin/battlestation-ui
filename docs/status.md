@@ -1,10 +1,9 @@
 # Status
 
-**As of:** 2026-11-10  
-**Milestone:** M9 tuner + tone lab implemented on `m9-tuner`; merge and full
-30-minute soak pending  
+**As of:** 2026-11-11  
+**Milestone:** M9 tuner + tone lab merged and tagged; 30-minute soak pending  
 **Firmware tag:** `bringup-m1` (bring-up), `m6` (audio), `m7` (dashboard/HA),
-`m8` (organism), `m8.1` (touch + density)
+`m8` (organism), `m8.1` (touch + density), `m9` (tuner/tone/metronome)
 
 ## Verified unit
 
@@ -85,7 +84,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | M7a dashboard shell | Branch `m7-dashboard` | Visual check |
 | M7b HA transport/weather | Mock-validated | Real HA + 30-min soak |
 | M8 organism | **Merged** `m8.1` | Full 30-min soak at final density |
-| M9 tuner + tone lab | Branch `m9-tuner` | Merge, 30-min soak, low-E guitar |
+| M9 tuner + tone lab | **Merged** `m9` | 30-min soak, low-E guitar |
 
 ## M5 launcher shell
 
@@ -184,9 +183,10 @@ density remains.
   reaction.
 - Detail: [`m8-organism-validation.md`](m8-organism-validation.md).
 
-## M9 tuner + tone lab (branch `m9-tuner`)
+## M9 tuner + tone lab (merged)
 
-Implemented and hardware-tested; merge and the 30-minute soak remain.
+Merged to `main` and tagged `m9`; the 30-minute soak and real low-E guitar check
+remain.
 
 - Pure-C engines: YIN tuner (2048/800 at 16 kHz), phase-continuous tone
   generator (sine/square/triangle/saw, linear/log sweep), Q32.32 metronome.
@@ -205,7 +205,6 @@ Implemented and hardware-tested; merge and the 30-minute soak remain.
 
 ## Next
 
-1. Merge M9, tag it, restore the normal launcher build.
+1. M10 settings/provisioning; M11 stabilization.
 2. Deferred: 30-minute tuner + tone + metronome soak; real low-E guitar check.
-3. M10 settings/provisioning; M11 stabilization.
-4. Post-M11 product ideas are captured in [`backlog.md`](backlog.md).
+3. Post-M11 product ideas are captured in [`backlog.md`](backlog.md).

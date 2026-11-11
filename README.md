@@ -13,8 +13,7 @@ lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M9 tuner + tone lab implemented on `m9-tuner`; merge and full
-30-minute soak pending.
+**Milestone:** M9 tuner + tone lab merged and tagged; 30-minute soak pending.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -48,7 +47,7 @@ lights), the organism and the tuner/tone lab.
   Q32.32 metronome; Tuner app with three tabs, cents needle, waveform, volume,
   one-shot sweep and visual beat. 440 Hz tone loopback read 440.1 Hz /
   +0.2 cents; tone and metronome audible; zero TX underruns. Host tests 7/7.
-  Merge and 30-minute soak pending.
+  Merged and tagged `m9`; 30-minute soak pending.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 
