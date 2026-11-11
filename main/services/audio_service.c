@@ -61,6 +61,7 @@ static bool s_service_ready;
 static bool s_service_error;
 static bool s_playback_ready;
 static bool s_output_muted = true;
+static int s_output_volume = AUDIO_DEFAULT_OUTPUT_VOLUME;
 static uint32_t s_tx_frames;
 static uint32_t s_tx_underruns;
 static bool s_started;
@@ -672,6 +673,23 @@ esp_err_t audio_service_set_output_volume(int percent)
         ESP_LOGE(TAG, "speaker volume set failed: %s", esp_err_to_name(ret));
         return ESP_FAIL;
     }
+    portENTER_CRITICAL(&s_state_lock);
+    s_output_volume = percent;
+    portEXIT_CRITICAL(&s_state_lock);
+    return ESP_OK;
+}
+
+esp_err_t audio_service_get_output_volume(int *percent)
+{
+    if (percent == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!s_playback_ready) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    portENTER_CRITICAL(&s_state_lock);
+    *percent = s_output_volume;
+    portEXIT_CRITICAL(&s_state_lock);
     return ESP_OK;
 }
 

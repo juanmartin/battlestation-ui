@@ -70,10 +70,12 @@ menu "Battlestation bring-up"
     endchoice
 
     config APP_BOOT_APP
-        string "App to mount at boot (launcher/dashboard/organism/diagnostics)"
+        string "App to mount at boot (launcher/dashboard/organism/tuner/settings/diagnostics)"
         default "launcher"
         help
-            Development/kiosk override. Unknown values fall back to the launcher.
+            Development/kiosk override. Valid ids are launcher, dashboard,
+            organism, tuner, settings and diagnostics. Unknown values fall back
+            to the launcher.
 
     config APP_SWITCH_SELFTEST
         bool "Run the M5 100-switch launcher self-test at boot"

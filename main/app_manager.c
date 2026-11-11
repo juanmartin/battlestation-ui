@@ -29,6 +29,7 @@ static const app_desc_t *const s_apps[] = {
     &launcher_app,
     &dashboard_app,
     &organism_app,
+    &tuner_app,
     &settings_app,
     &diagnostics_app,
 };

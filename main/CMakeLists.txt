@@ -7,6 +7,7 @@ set(main_srcs
     "services/audio_analysis.c"
     "services/time_service.c"
     "services/ha_client.c"
+    "services/tuner_service.c"
     "engine/audio_ring.c"
     "engine/audio_features.c"
     "engine/audio_fft.c"
@@ -20,6 +21,7 @@ set(main_srcs
     "apps/launcher.c"
     "apps/dashboard.c"
     "apps/organism.c"
+    "apps/tuner.c"
     "apps/settings.c"
     "apps/diagnostics.c"
 )
