@@ -61,6 +61,13 @@ add_executable(test_metronome
 target_include_directories(test_metronome PRIVATE "${ENGINE_DIR}")
 target_link_libraries(test_metronome PRIVATE m)
 
+add_executable(test_settings
+    test_settings.c
+    "${ENGINE_DIR}/settings_codec.c"
+)
+target_include_directories(test_settings PRIVATE "${ENGINE_DIR}")
+target_link_libraries(test_settings PRIVATE m)
+
 enable_testing()
 
 add_test(NAME fft_spectrum COMMAND test_fft)
@@ -70,3 +77,4 @@ add_test(NAME organism COMMAND test_organism)
 add_test(NAME tuner COMMAND test_tuner)
 add_test(NAME tone COMMAND test_tone)
 add_test(NAME metronome COMMAND test_metronome)
+add_test(NAME settings COMMAND test_settings)

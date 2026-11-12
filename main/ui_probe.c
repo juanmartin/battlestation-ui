@@ -8,6 +8,7 @@
 #include "esp_heap_caps.h"
 #include "esp_lv_adapter.h"
 #include "esp_log.h"
+#include "temperature_service.h"
 #include "wifi_probe.h"
 
 static const char *TAG = "ui_probe";
@@ -23,6 +24,7 @@ static lv_obj_t *s_label_peak;
 static lv_obj_t *s_wifi_state;
 static lv_obj_t *s_wifi_ip;
 static lv_obj_t *s_wifi_rssi;
+static lv_obj_t *s_temp_label;
 static lv_obj_t *s_touch_label;
 static lv_obj_t *s_fps_label;
 static lv_obj_t *s_touch_overlay;
@@ -150,6 +152,13 @@ static void ui_timer_cb(lv_timer_t *timer)
                           w.state == WIFI_PROBE_CONNECTED ? w.rssi : 0,
                           (unsigned)w.retries);
 
+    float temp_c = 0.0f;
+    if (temperature_service_read(&temp_c)) {
+        lv_label_set_text_fmt(s_temp_label, "P4 die: %.1f C", (double)temp_c);
+    } else {
+        lv_label_set_text(s_temp_label, "P4 die: --");
+    }
+
     uint32_t fps = 0;
     if (esp_lv_adapter_get_fps(s_disp, &fps) == ESP_OK) {
         lv_label_set_text_fmt(s_fps_label, "%u fps", (unsigned)fps);
@@ -232,6 +241,7 @@ esp_err_t ui_probe_mount(lv_obj_t *parent)
     s_wifi_state = make_label(right, "initializing...", &lv_font_montserrat_20, 0xFBBF24, 16, 48);
     s_wifi_ip = make_label(right, "IP: ---", &lv_font_montserrat_14, 0xE2E8F0, 16, 84);
     s_wifi_rssi = make_label(right, "RSSI: 0 dBm   retries: 0", &lv_font_montserrat_14, 0x94A3B8, 16, 108);
+    s_temp_label = make_label(right, "P4 die: --", &lv_font_montserrat_14, 0xFBBF24, 16, 132);
 
     make_label(right, "TOUCH  /  GT911", &lv_font_montserrat_20, 0x22D3EE, 16, 156);
     s_touch_label = make_label(right, "touch anywhere", &lv_font_montserrat_20, 0xE2E8F0, 16, 190);
@@ -305,6 +315,7 @@ void ui_probe_unmount(void)
     s_wifi_state = NULL;
     s_wifi_ip = NULL;
     s_wifi_rssi = NULL;
+    s_temp_label = NULL;
     s_touch_label = NULL;
     s_fps_label = NULL;
     s_touch_overlay = NULL;
