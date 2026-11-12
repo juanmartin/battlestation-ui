@@ -13,8 +13,8 @@ lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M10 settings/provisioning implemented on `m10-settings`; manual
-scan/timezone check, merge and soak pending.
+**Milestone:** M10 settings/provisioning merged and tagged; manual
+scan/timezone/HA checks and soak pending.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -54,7 +54,8 @@ scan/timezone check, merge and soak pending.
   controls, Wi-Fi scan/connect, a four-tab Settings app with on-screen keyboard,
   12 timezone presets + live local clock, and P4 die temperature in Settings and
   Diagnostics. Host tests 8/8; persistence verified across reset; normal
-  launcher + Wi-Fi smoke passed. Scan/timezone manual check and merge pending.
+  launcher + Wi-Fi smoke passed. Scan/timezone manual check pending.
+  Merged and tagged `m10`.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 

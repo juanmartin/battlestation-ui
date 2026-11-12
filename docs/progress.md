@@ -228,8 +228,9 @@ the detailed document instead of duplicating it.
 - Persistence verified across reset (`defaults` → `nvs`, brightness/mic values
   survived). Normal launcher + Wi-Fi smoke passed; host tests 8/8; zero
   warnings.
+- Merged PR #7 and tagged **`m10`**; normal launcher + Wi-Fi build flashed.
 - Pending: manual SCAN/CONNECT and timezone tap on the final build, real HA
-  config/invalid token, merge/tag, 30-minute settings soak.
+  config/invalid token, 30-minute settings soak.
 
 ## Next
 

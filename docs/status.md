@@ -1,10 +1,11 @@
 # Status
 
-**As of:** 2026-11-12  
-**Milestone:** M10 settings/provisioning implemented on `m10-settings`; merge,
-manual scan/timezone check and soak pending  
+**As of:** 2026-11-13  
+**Milestone:** M10 settings/provisioning merged and tagged; manual
+scan/timezone/HA checks and soak pending  
 **Firmware tag:** `bringup-m1` (bring-up), `m6` (audio), `m7` (dashboard/HA),
-`m8` (organism), `m8.1` (touch + density), `m9` (tuner/tone/metronome)
+`m8` (organism), `m8.1` (touch + density), `m9` (tuner/tone/metronome),
+`m10` (settings/provisioning)
 
 ## Verified unit
 
@@ -86,7 +87,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | M7b HA transport/weather | Mock-validated | Real HA + 30-min soak |
 | M8 organism | **Merged** `m8.1` | Full 30-min soak at final density |
 | M9 tuner + tone lab | **Merged** `m9` | 30-min soak, low-E guitar |
-| M10 settings/provisioning | Branch `m10-settings` | Manual scan/timezone, HA, soak |
+| M10 settings/provisioning | **Merged** `m10` | Manual scan/timezone, HA, soak |
 
 ## M5 launcher shell
 
@@ -205,10 +206,10 @@ remain.
   25 times; child delta 0, PSRAM delta 0, no errors.
 - Detail: [`m9-tuner-validation.md`](m9-tuner-validation.md).
 
-## M10 settings/provisioning (branch `m10-settings`)
+## M10 settings/provisioning (merged)
 
-Implemented and hardware-smoke-tested; merge and manual scan/timezone/HA checks
-remain.
+Merged to `main` and tagged `m10`; manual scan/timezone/HA checks and the
+30-minute soak remain.
 
 - NVS-backed versioned settings blob with CRC; Kconfig defaults on first boot.
 - Settings app: display/audio sliders, Wi-Fi scan/connect with masked password,
@@ -222,7 +223,7 @@ remain.
 
 ## Next
 
-1. Merge/tag M10 after the manual scan/timezone/HA check.
-2. M11 stabilization: 24-hour soak, error injection, final report.
+1. M11 stabilization: 24-hour soak, error injection, final report.
+2. Manual M10 scan/timezone/HA verification and 30-minute settings soak.
 3. Deferred: 30-minute organism and M9 soaks.
 4. Post-M11 product ideas are captured in [`backlog.md`](backlog.md).
