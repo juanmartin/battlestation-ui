@@ -1,7 +1,8 @@
 # Status
 
-**As of:** 2026-11-11  
-**Milestone:** M9 tuner + tone lab merged and tagged; 30-minute soak pending  
+**As of:** 2026-11-12  
+**Milestone:** M10 settings/provisioning implemented on `m10-settings`; merge,
+manual scan/timezone check and soak pending  
 **Firmware tag:** `bringup-m1` (bring-up), `m6` (audio), `m7` (dashboard/HA),
 `m8` (organism), `m8.1` (touch + density), `m9` (tuner/tone/metronome)
 
@@ -85,6 +86,7 @@ No filesystem, no OTA slots. Settings (when added) go to a small NVS namespace.
 | M7b HA transport/weather | Mock-validated | Real HA + 30-min soak |
 | M8 organism | **Merged** `m8.1` | Full 30-min soak at final density |
 | M9 tuner + tone lab | **Merged** `m9` | 30-min soak, low-E guitar |
+| M10 settings/provisioning | Branch `m10-settings` | Manual scan/timezone, HA, soak |
 
 ## M5 launcher shell
 
@@ -203,8 +205,24 @@ remain.
   25 times; child delta 0, PSRAM delta 0, no errors.
 - Detail: [`m9-tuner-validation.md`](m9-tuner-validation.md).
 
+## M10 settings/provisioning (branch `m10-settings`)
+
+Implemented and hardware-smoke-tested; merge and manual scan/timezone/HA checks
+remain.
+
+- NVS-backed versioned settings blob with CRC; Kconfig defaults on first boot.
+- Settings app: display/audio sliders, Wi-Fi scan/connect with masked password,
+  HA URL/token/entities, 12 timezone presets + live local clock, P4 die
+  temperature, reset defaults.
+- Runtime mic gain, output volume and timezone apply live; Wi-Fi credentials
+  apply immediately; HA changes apply on restart; Tuner reads A4 on start.
+- Persistence verified across reset (`defaults` → `nvs`; brightness/mic values
+  survived). Normal launcher + Wi-Fi smoke passed; host tests 8/8.
+- Detail: [`m10-settings-validation.md`](m10-settings-validation.md).
+
 ## Next
 
-1. M10 settings/provisioning; M11 stabilization.
-2. Deferred: 30-minute tuner + tone + metronome soak; real low-E guitar check.
-3. Post-M11 product ideas are captured in [`backlog.md`](backlog.md).
+1. Merge/tag M10 after the manual scan/timezone/HA check.
+2. M11 stabilization: 24-hour soak, error injection, final report.
+3. Deferred: 30-minute organism and M9 soaks.
+4. Post-M11 product ideas are captured in [`backlog.md`](backlog.md).

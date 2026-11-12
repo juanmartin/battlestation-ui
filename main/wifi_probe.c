@@ -21,6 +21,12 @@ static wifi_probe_snapshot_t s_snapshot;
 static esp_timer_handle_t s_retry_timer;
 static esp_timer_handle_t s_rssi_timer;
 static uint32_t s_retry_count;
+static bool s_wifi_started;
+static char s_ssid[WIFI_PROBE_SSID_MAX] = CONFIG_APP_WIFI_SSID;
+static char s_password[WIFI_PROBE_PASSWORD_MAX] = CONFIG_APP_WIFI_PASSWORD;
+static portMUX_TYPE s_scan_lock = portMUX_INITIALIZER_UNLOCKED;
+static wifi_probe_scan_t s_scan;
+static wifi_ap_record_t s_scan_records[WIFI_PROBE_SCAN_MAX];
 
 static void snapshot_set_state(wifi_probe_state_t state)
 {
@@ -38,6 +44,102 @@ static void snapshot_set_ip(const char *ip)
         s_snapshot.ip[0] = '\0';
     }
     portEXIT_CRITICAL(&s_lock);
+}
+
+static void copy_ssid(char *dst, size_t size, const char *src)
+{
+    if (src == NULL) {
+        dst[0] = '\0';
+        return;
+    }
+    strlcpy(dst, src, size);
+}
+
+esp_err_t wifi_probe_set_credentials(const char *ssid, const char *password)
+{
+    if (ssid == NULL || password == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    const size_t ssid_len = strlen(ssid);
+    const size_t password_len = strlen(password);
+    if (ssid_len > sizeof(((wifi_config_t *)0)->sta.ssid) ||
+        password_len > sizeof(((wifi_config_t *)0)->sta.password)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL(&s_lock);
+    copy_ssid(s_ssid, sizeof(s_ssid), ssid);
+    copy_ssid(s_password, sizeof(s_password), password);
+    portEXIT_CRITICAL(&s_lock);
+
+    if (!s_wifi_started) {
+        return ESP_OK; /* cached for start */
+    }
+
+    if (ssid[0] == '\0') {
+        esp_wifi_disconnect();
+        snapshot_set_state(WIFI_PROBE_UNPROVISIONED);
+        snapshot_set_ip(NULL);
+        return ESP_OK;
+    }
+
+    wifi_config_t wc = {0};
+    memcpy(wc.sta.ssid, ssid, ssid_len);
+    memcpy(wc.sta.password, password, password_len);
+    wc.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+    esp_wifi_disconnect();
+    esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wc);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "set_config failed: %s", esp_err_to_name(err));
+        snapshot_set_state(WIFI_PROBE_FAILED);
+        return err;
+    }
+    s_retry_count = 0;
+    snapshot_set_state(WIFI_PROBE_CONNECTING);
+    err = esp_wifi_connect();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "connect failed: %s", esp_err_to_name(err));
+        snapshot_set_state(WIFI_PROBE_FAILED);
+        return err;
+    }
+    ESP_LOGI(TAG, "credentials updated; reconnecting to '%s'", ssid);
+    return ESP_OK;
+}
+
+esp_err_t wifi_probe_scan_start(void)
+{
+    if (!s_wifi_started) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    portENTER_CRITICAL(&s_scan_lock);
+    if (s_scan.running) {
+        portEXIT_CRITICAL(&s_scan_lock);
+        return ESP_OK;
+    }
+    s_scan.running = true;
+    s_scan.done = false;
+    s_scan.count = 0;
+    portEXIT_CRITICAL(&s_scan_lock);
+
+    esp_err_t err = esp_wifi_scan_start(NULL, false);
+    if (err != ESP_OK) {
+        portENTER_CRITICAL(&s_scan_lock);
+        s_scan.running = false;
+        portEXIT_CRITICAL(&s_scan_lock);
+        ESP_LOGW(TAG, "scan start failed: %s", esp_err_to_name(err));
+    }
+    return err;
+}
+
+void wifi_probe_scan_get(wifi_probe_scan_t *out)
+{
+    if (out == NULL) {
+        return;
+    }
+    portENTER_CRITICAL(&s_scan_lock);
+    *out = s_scan;
+    portEXIT_CRITICAL(&s_scan_lock);
 }
 
 static void retry_timer_cb(void *arg)
@@ -110,6 +212,32 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         return;
     }
 
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE) {
+        uint16_t count = WIFI_PROBE_SCAN_MAX;
+        esp_err_t err = esp_wifi_scan_get_ap_records(&count, s_scan_records);
+        if (err != ESP_OK) {
+            count = 0;
+        }
+        if (count > WIFI_PROBE_SCAN_MAX) {
+            count = WIFI_PROBE_SCAN_MAX;
+        }
+
+        portENTER_CRITICAL(&s_scan_lock);
+        memset(&s_scan, 0, sizeof(s_scan));
+        s_scan.count = count;
+        for (uint16_t i = 0; i < count; i++) {
+            strlcpy(s_scan.aps[i].ssid, (const char *)s_scan_records[i].ssid,
+                    sizeof(s_scan.aps[i].ssid));
+            s_scan.aps[i].rssi = s_scan_records[i].rssi;
+            s_scan.aps[i].secure = s_scan_records[i].authmode != WIFI_AUTH_OPEN;
+        }
+        s_scan.running = false;
+        s_scan.done = true;
+        portEXIT_CRITICAL(&s_scan_lock);
+        ESP_LOGI(TAG, "scan done: %u APs", (unsigned)count);
+        return;
+    }
+
     if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         char ip[16];
@@ -131,7 +259,14 @@ static void wifi_init_task(void *arg)
 {
     (void)arg;
 
-    if (strlen(CONFIG_APP_WIFI_SSID) == 0) {
+    char ssid[WIFI_PROBE_SSID_MAX];
+    char password[WIFI_PROBE_PASSWORD_MAX];
+    portENTER_CRITICAL(&s_lock);
+    strlcpy(ssid, s_ssid, sizeof(ssid));
+    strlcpy(password, s_password, sizeof(password));
+    portEXIT_CRITICAL(&s_lock);
+
+    if (ssid[0] == '\0') {
         ESP_LOGW(TAG, "no SSID configured; skipping Wi-Fi");
         snapshot_set_state(WIFI_PROBE_UNPROVISIONED);
         vTaskDelete(NULL);
@@ -203,8 +338,8 @@ static void wifi_init_task(void *arg)
     }
 
     wifi_config_t wc = {0};
-    strlcpy((char *)wc.sta.ssid, CONFIG_APP_WIFI_SSID, sizeof(wc.sta.ssid));
-    strlcpy((char *)wc.sta.password, CONFIG_APP_WIFI_PASSWORD, sizeof(wc.sta.password));
+    memcpy(wc.sta.ssid, ssid, strlen(ssid));
+    memcpy(wc.sta.password, password, strlen(password));
     wc.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
@@ -226,7 +361,8 @@ static void wifi_init_task(void *arg)
         return;
     }
 
-    ESP_LOGI(TAG, "STA started for SSID '%s'", CONFIG_APP_WIFI_SSID);
+    s_wifi_started = true;
+    ESP_LOGI(TAG, "STA started for SSID '%s'", ssid);
 
     /* The event handlers keep running after this task exits. */
     vTaskDelete(NULL);

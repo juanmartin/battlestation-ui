@@ -5,13 +5,13 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/temperature_sensor.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "app_manager.h"
 #include "audio_service.h"
+#include "temperature_service.h"
 
 static const char *TAG = "diag_probe";
 static lv_display_t *s_disp;
@@ -62,15 +62,6 @@ static void diag_task(void *arg)
 {
     (void)arg;
 
-    temperature_sensor_handle_t tsens = NULL;
-    temperature_sensor_config_t tsens_cfg = TEMPERATURE_SENSOR_CONFIG_DEFAULT(-10, 80);
-    if (temperature_sensor_install(&tsens_cfg, &tsens) == ESP_OK) {
-        if (temperature_sensor_enable(tsens) != ESP_OK) {
-            temperature_sensor_uninstall(tsens);
-            tsens = NULL;
-        }
-    }
-
     ESP_LOGI(TAG, "reset reason: %s; heartbeat starting", reset_reason_name(esp_reset_reason()));
 
     uint32_t last_heartbeat = 0;
@@ -97,8 +88,8 @@ static void diag_task(void *arg)
         if (audio_service_get_status(&audio_status) != ESP_OK) {
             memset(&audio_status, 0, sizeof(audio_status));
         }
-        float temp_c = 0.0f;
-        if (tsens != NULL && temperature_sensor_get_celsius(tsens, &temp_c) != ESP_OK) {
+        float temp_c = -999.0f;
+        if (!temperature_service_read(&temp_c)) {
             temp_c = -999.0f;
         }
 

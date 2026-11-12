@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+#include "settings.h"
 
 static const char *TAG = "tuner_service";
 
@@ -291,6 +292,11 @@ esp_err_t tuner_service_start(void)
         ESP_LOGE(TAG, "tuner engine create failed");
         close_resources();
         return ESP_ERR_NO_MEM;
+    }
+
+    const app_settings_t *settings = settings_get();
+    if (settings != NULL) {
+        tuner_engine_set_a4_reference(s_tuner, settings->a4_hz);
     }
 
     tone_engine_config_t tone_cfg = {

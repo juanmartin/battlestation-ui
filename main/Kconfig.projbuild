@@ -99,11 +99,13 @@ endmenu
 menu "Battlestation dashboard"
 
     config APP_TIMEZONE
-        string "POSIX timezone (for example UTC0 or CET-1CEST)"
-        default "UTC0"
+        string "POSIX timezone (for example <-03>3 or CET-1CEST)"
+        default "<-03>3"
         help
             Applied with setenv("TZ") + tzset() before SNTP starts. The
-            dashboard shows the local time only after NTP sets a valid clock.
+            default is UTC-3 (Argentina, no DST). The dashboard shows local
+            time only after NTP sets a valid clock. M10 also exposes a
+            runtime picker in Settings.
 
     config APP_HA_URL
         string "Home Assistant base URL (empty disables HA)"

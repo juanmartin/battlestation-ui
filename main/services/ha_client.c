@@ -12,6 +12,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
+#include "settings.h"
 #include "wifi_probe.h"
 
 static const char *TAG = "ha_client";
@@ -27,12 +28,15 @@ static const char *TAG = "ha_client";
 #define HA_WS_TIMEOUT_MS 5000
 #define HA_WS_BUFFER_SIZE 4096
 
-static const char *const s_light_entities[HA_LIGHT_COUNT] = {
+static char s_light_entities[HA_LIGHT_COUNT][SETTINGS_ENTITY_MAX] = {
     CONFIG_APP_LIGHT_ENTITY_0,
     CONFIG_APP_LIGHT_ENTITY_1,
     CONFIG_APP_LIGHT_ENTITY_2,
     CONFIG_APP_LIGHT_ENTITY_3,
 };
+static char s_ha_url[SETTINGS_HA_URL_MAX] = CONFIG_APP_HA_URL;
+static char s_ha_token[SETTINGS_HA_TOKEN_MAX] = CONFIG_APP_HA_TOKEN;
+static char s_weather_entity[SETTINGS_ENTITY_MAX] = CONFIG_APP_WEATHER_ENTITY;
 
 typedef struct {
     int index;
@@ -81,10 +85,35 @@ static bool entity_configured(const char *entity)
     return entity != NULL && entity[0] != '\0';
 }
 
+static void copy_config_string(char *dst, size_t size, const char *src)
+{
+    if (src == NULL) {
+        dst[0] = '\0';
+        return;
+    }
+    strlcpy(dst, src, size);
+}
+
+static void load_settings(void)
+{
+    const app_settings_t *settings = settings_get();
+    if (settings == NULL) {
+        return; /* compile-time defaults are already in the buffers */
+    }
+    copy_config_string(s_ha_url, sizeof(s_ha_url), settings->ha_url);
+    copy_config_string(s_ha_token, sizeof(s_ha_token), settings->ha_token);
+    copy_config_string(s_weather_entity, sizeof(s_weather_entity),
+                       settings->weather_entity);
+    for (int i = 0; i < HA_LIGHT_COUNT; i++) {
+        copy_config_string(s_light_entities[i], SETTINGS_ENTITY_MAX,
+                           settings->light_entity[i]);
+    }
+}
+
 static bool configured(void)
 {
     /* Both URL and token are required. The token is never logged. */
-    return CONFIG_APP_HA_URL[0] != '\0' && CONFIG_APP_HA_TOKEN[0] != '\0';
+    return s_ha_url[0] != '\0' && s_ha_token[0] != '\0';
 }
 
 static bool any_entity_configured(void)
@@ -94,7 +123,7 @@ static bool any_entity_configured(void)
             return true;
         }
     }
-    return entity_configured(CONFIG_APP_WEATHER_ENTITY);
+    return entity_configured(s_weather_entity);
 }
 
 static int light_index_for_entity(const char *entity_id)
@@ -137,7 +166,7 @@ static void mark_weather_unavailable(void)
 
 static bool build_config(void)
 {
-    const char *url = CONFIG_APP_HA_URL;
+    const char *url = s_ha_url;
     size_t len = strlen(url);
     while (len > 0 && url[len - 1] == '/') {
         len--;
@@ -187,7 +216,7 @@ static bool build_config(void)
     }
 
     strlcpy(s_auth_header, "Bearer ", sizeof(s_auth_header));
-    if (strlcat(s_auth_header, CONFIG_APP_HA_TOKEN, sizeof(s_auth_header)) >=
+    if (strlcat(s_auth_header, s_ha_token, sizeof(s_auth_header)) >=
         sizeof(s_auth_header)) {
         ESP_LOGE(TAG, "HA token is too long; staying offline");
         return false;
@@ -474,7 +503,7 @@ static bool sync_all(void)
     }
 
     if (transport_ok) {
-        const char *weather_entity = CONFIG_APP_WEATHER_ENTITY;
+        const char *weather_entity = s_weather_entity;
         if (entity_configured(weather_entity)) {
             cJSON *root = NULL;
             esp_err_t err = rest_get_entity(weather_entity, &root);
@@ -611,7 +640,7 @@ static void ws_send_auth(void)
         return;
     }
     cJSON_AddStringToObject(root, "type", "auth");
-    cJSON_AddStringToObject(root, "access_token", CONFIG_APP_HA_TOKEN);
+    cJSON_AddStringToObject(root, "access_token", s_ha_token);
     ws_send_json(root);
 }
 
@@ -667,8 +696,8 @@ static void ws_handle_event(const cJSON *root)
         apply_light_json(light_index, new_state);
         return;
     }
-    if (entity_configured(CONFIG_APP_WEATHER_ENTITY) &&
-        strcmp(CONFIG_APP_WEATHER_ENTITY, entity_id->valuestring) == 0) {
+    if (entity_configured(s_weather_entity) &&
+        strcmp(s_weather_entity, entity_id->valuestring) == 0) {
         apply_weather_json(new_state);
     }
 }
@@ -873,6 +902,7 @@ esp_err_t ha_client_start(void)
         return ESP_OK;
     }
     s_started = true;
+    load_settings();
 
     /* The HTTP client prints the full request header buffer at DEBUG level,
      * including Authorization. Keep that tag at INFO so the token cannot leak
@@ -982,5 +1012,5 @@ const char *ha_client_light_entity(int index)
 
 const char *ha_client_weather_entity(void)
 {
-    return CONFIG_APP_WEATHER_ENTITY;
+    return s_weather_entity;
 }

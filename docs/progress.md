@@ -212,9 +212,28 @@ the detailed document instead of duplicating it.
   device smoke passed.
 - Pending: 30-minute soak, real low-E guitar check.
 
+## 2026-11-12 — M10 settings and provisioning
+
+- Added a CRC/versioned NVS settings blob (`battlestation/cfg`) with Kconfig
+  fallback and pure-C codec/validation; host tests added.
+- Added the Settings app with DISPLAY/AUDIO, NETWORK, HOME ASSISTANT and SYSTEM
+  tabs, a reusable full-width keyboard editor, 12 readable timezone presets,
+  live local clock, P4 die temperature and reset defaults.
+- Runtime integration: brightness, mic gain, output volume and timezone apply
+  live; Wi-Fi credentials/scan; HA config loaded at boot with save+restart;
+  Tuner reads the saved A4 reference.
+- Fixed the first hardware pass issues: keyboard no longer overflowed the
+  editor, timezone options are readable with a live clock, paragraphs wrap
+  naturally, and the timezone note no longer clips.
+- Persistence verified across reset (`defaults` → `nvs`, brightness/mic values
+  survived). Normal launcher + Wi-Fi smoke passed; host tests 8/8; zero
+  warnings.
+- Pending: manual SCAN/CONNECT and timezone tap on the final build, real HA
+  config/invalid token, merge/tag, 30-minute settings soak.
+
 ## Next
 
-- Merge/tag M9; restore the normal launcher build.
-- M10 settings/provisioning, then M11 stabilization.
-- Deferred: full 30-minute organism soak at 4,096 particles and the M9 soak.
+- Merge/tag M10 after the manual scan/timezone/HA check.
+- M11 stabilization: 24-hour soak, error injection, final report.
+- Deferred: 30-minute organism and M9 soaks.
 - Post-M11 ideas: [`backlog.md`](backlog.md).

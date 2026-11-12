@@ -1,6 +1,8 @@
 #include "time_service.h"
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_log.h"
 #include "esp_sntp.h"
@@ -14,8 +16,30 @@ static const char *TAG = "time_service";
 /* Any wall-clock time before this is treated as "NTP has not replied yet".
  * 1700000000 is 2023-11-14; a real device never boots into 1970. */
 #define TIME_VALID_THRESHOLD ((time_t)1700000000)
+#define TIMEZONE_MAX 40
 
 static bool s_started;
+static char s_timezone[TIMEZONE_MAX] = CONFIG_APP_TIMEZONE;
+
+esp_err_t time_service_set_timezone(const char *timezone)
+{
+    if (timezone == NULL || timezone[0] == '\0') {
+        return ESP_ERR_INVALID_ARG;
+    }
+    snprintf(s_timezone, sizeof(s_timezone), "%s", timezone);
+    if (setenv("TZ", s_timezone, 1) != 0) {
+        ESP_LOGE(TAG, "failed to set timezone '%s'", s_timezone);
+        return ESP_ERR_NO_MEM;
+    }
+    tzset();
+    ESP_LOGI(TAG, "timezone applied: %s", s_timezone);
+    return ESP_OK;
+}
+
+const char *time_service_get_timezone(void)
+{
+    return s_timezone;
+}
 
 /* esp_sntp_* posts work to the lwIP TCP/IP thread, which does not exist until
  * wifi_probe's task calls esp_netif_init(). Wait for a connected snapshot in a
@@ -43,7 +67,7 @@ static void sntp_start_task(void *arg)
     esp_sntp_setservername(0, "pool.ntp.org");
     esp_sntp_init();
 
-    ESP_LOGI(TAG, "SNTP started (server pool.ntp.org, TZ=%s)", CONFIG_APP_TIMEZONE);
+    ESP_LOGI(TAG, "SNTP started (server pool.ntp.org, TZ=%s)", s_timezone);
     vTaskDelete(NULL);
 }
 
@@ -53,8 +77,8 @@ esp_err_t time_service_start(void)
         return ESP_OK;
     }
 
-    if (setenv("TZ", CONFIG_APP_TIMEZONE, 1) != 0) {
-        ESP_LOGE(TAG, "failed to apply timezone '%s'", CONFIG_APP_TIMEZONE);
+    if (setenv("TZ", s_timezone, 1) != 0) {
+        ESP_LOGE(TAG, "failed to apply timezone '%s'", s_timezone);
         return ESP_ERR_NO_MEM;
     }
     tzset();
@@ -66,8 +90,7 @@ esp_err_t time_service_start(void)
     }
 
     s_started = true;
-    ESP_LOGI(TAG, "time service ready (TZ=%s, waiting for Wi-Fi)",
-             CONFIG_APP_TIMEZONE);
+    ESP_LOGI(TAG, "time service ready (TZ=%s, waiting for Wi-Fi)", s_timezone);
     return ESP_OK;
 }
 

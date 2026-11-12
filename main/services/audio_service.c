@@ -62,6 +62,7 @@ static bool s_service_error;
 static bool s_playback_ready;
 static bool s_output_muted = true;
 static int s_output_volume = AUDIO_DEFAULT_OUTPUT_VOLUME;
+static float s_mic_gain_db = CONFIG_APP_MIC_GAIN_DB;
 static uint32_t s_tx_frames;
 static uint32_t s_tx_underruns;
 static bool s_started;
@@ -264,13 +265,13 @@ esp_err_t audio_service_start(void)
         return ESP_FAIL;
     }
 
-    ret = esp_codec_dev_set_in_gain(s_mic, (float)CONFIG_APP_MIC_GAIN_DB);
+    ret = esp_codec_dev_set_in_gain(s_mic, s_mic_gain_db);
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "mic gain set failed: %s", esp_err_to_name(ret));
     }
 
-    ESP_LOGI(TAG, "ES7210 capture: %d Hz, %d ch, 16-bit, PGA %d dB",
-             AUDIO_SAMPLE_RATE_HZ, AUDIO_CHANNELS, CONFIG_APP_MIC_GAIN_DB);
+    ESP_LOGI(TAG, "ES7210 capture: %d Hz, %d ch, 16-bit, PGA %.1f dB",
+             AUDIO_SAMPLE_RATE_HZ, AUDIO_CHANNELS, (double)s_mic_gain_db);
 
     portENTER_CRITICAL(&s_state_lock);
     s_service_ready = true;
@@ -659,9 +660,34 @@ esp_err_t audio_service_playback_close(audio_playback_source_t src)
     return ESP_OK;
 }
 
-esp_err_t audio_service_set_output_volume(int percent)
+esp_err_t audio_service_set_mic_gain(float db)
 {
-    if (percent < 0 || percent > 100) {
+    if (db < 0.0f || db > 37.0f) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    s_mic_gain_db = db;
+    if (s_mic == NULL || !s_service_ready) {
+        return ESP_OK; /* cached; applied when capture starts */
+    }
+    int ret = esp_codec_dev_set_in_gain(s_mic, db);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "mic gain set failed: %s", esp_err_to_name(ret));
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+esp_err_t audio_service_get_mic_gain(float *db)
+{
+    if (db == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    *db = s_mic_gain_db;
+    return ESP_OK;
+}
+
+esp_err_t audio_service_set_output_volume(int percent)
+{    if (percent < 0 || percent > 100) {
         return ESP_ERR_INVALID_ARG;
     }
     if (!s_playback_ready || s_spk == NULL) {

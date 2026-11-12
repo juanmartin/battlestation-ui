@@ -15,7 +15,7 @@ validation gates.
 | M7 — Dashboard + Home Assistant | **In progress** | 4 lights, clock, weather, detail views |
 | M8 — Generative organism | **In progress** | ≥ 30 fps, no UI stall |
 | M9 — Tuner + tone lab | **Done** `m9` | 30-min soak, low-E guitar |
-| M10 — Settings and provisioning | Next | Persistence, bad input handling |
+| M10 — Settings and provisioning | Branch `m10-settings` | Manual scan/timezone, HA, soak |
 | M11 — Stabilization | Planned | 24 h soak, graceful degradation |
 
 ## M0 — Environment and board identity
@@ -164,6 +164,14 @@ One app with three related tools; all audio goes through `audio_service`
 - **Accept:** settings survive reboot; invalid SSID/token handled without crash;
   no filesystem/logs created; dashboard and tuner pick up changes without a
   reboot where practical.
+- **Result:** NVS-backed, CRC/versioned settings store; Settings app with
+  display/audio, network scan/connect, Home Assistant, and system tabs; runtime
+  mic gain/volume/timezone; internal P4 temperature in Settings and
+  Diagnostics. Host tests 8/8. Hardware: settings survived reset (source
+  `defaults` → `nvs`; brightness/mic persisted), normal launcher + Wi-Fi smoke
+  passed, zero warnings. Manual scan/connect, timezone-tap confirmation, real HA
+  and the 30-minute soak remain. Detail:
+  [`m10-settings-validation.md`](m10-settings-validation.md).
 
 ## M11 — Stabilization
 
