@@ -13,7 +13,8 @@ lights), the organism and the tuner/tone lab.
 
 ## Status
 
-**Milestone:** M9 tuner + tone lab merged and tagged; 30-minute soak pending.
+**Milestone:** M10 settings/provisioning implemented on `m10-settings`; manual
+scan/timezone check, merge and soak pending.
 
 - ESP32-P4 **rev1.3**, 32 MB flash, 32 MB PSRAM, 360 MHz.
 - EK79007 display + GT911 touch initialized at 180°.
@@ -48,6 +49,12 @@ lights), the organism and the tuner/tone lab.
   one-shot sweep and visual beat. 440 Hz tone loopback read 440.1 Hz /
   +0.2 cents; tone and metronome audible; zero TX underruns. Host tests 7/7.
   Merged and tagged `m9`; 30-minute soak pending.
+- M10 settings/provisioning: CRC/versioned NVS settings blob, persistent
+  brightness/mic/volume/A4/Wi-Fi/HA/timezone/entity IDs, live audio/timezone
+  controls, Wi-Fi scan/connect, a four-tab Settings app with on-screen keyboard,
+  12 timezone presets + live local clock, and P4 die temperature in Settings and
+  Diagnostics. Host tests 8/8; persistence verified across reset; normal
+  launcher + Wi-Fi smoke passed. Scan/timezone manual check and merge pending.
 
 Full evidence and open items: [`docs/status.md`](docs/status.md).
 
